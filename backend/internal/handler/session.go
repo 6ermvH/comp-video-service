@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"errors"
 	"net/http"
 
@@ -11,12 +12,18 @@ import (
 	"comp-video-service/backend/internal/service"
 )
 
-// SessionHandler serves participant session endpoints.
-type SessionHandler struct {
-	sessionSvc *service.SessionService
+type sessionService interface {
+	Start(ctx context.Context, req *model.StartSessionRequest) (*service.SessionStartResult, error)
+	NextTask(ctx context.Context, token string) (*model.TaskPayload, error)
+	Complete(ctx context.Context, token string) (*service.SessionCompleteResult, error)
 }
 
-func NewSessionHandler(sessionSvc *service.SessionService) *SessionHandler {
+// SessionHandler serves participant session endpoints.
+type SessionHandler struct {
+	sessionSvc sessionService
+}
+
+func NewSessionHandler(sessionSvc sessionService) *SessionHandler {
 	return &SessionHandler{sessionSvc: sessionSvc}
 }
 

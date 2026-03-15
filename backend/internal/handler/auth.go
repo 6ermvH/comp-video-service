@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"crypto/rand"
 	"encoding/hex"
 	"net/http"
@@ -10,18 +11,21 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 
 	"comp-video-service/backend/internal/model"
-	"comp-video-service/backend/internal/repository"
 	"golang.org/x/crypto/bcrypt"
 )
 
+type adminAuthRepository interface {
+	GetByUsername(ctx context.Context, username string) (*model.Admin, error)
+}
+
 // AuthHandler handles authentication endpoints.
 type AuthHandler struct {
-	adminRepo *repository.AdminRepository
+	adminRepo adminAuthRepository
 	jwtSecret string
 }
 
 // NewAuthHandler creates a new AuthHandler.
-func NewAuthHandler(adminRepo *repository.AdminRepository, jwtSecret string) *AuthHandler {
+func NewAuthHandler(adminRepo adminAuthRepository, jwtSecret string) *AuthHandler {
 	return &AuthHandler{adminRepo: adminRepo, jwtSecret: jwtSecret}
 }
 

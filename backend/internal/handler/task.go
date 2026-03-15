@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"net/http"
 	"strings"
 
@@ -9,21 +10,31 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 
 	"comp-video-service/backend/internal/model"
-	"comp-video-service/backend/internal/repository"
-	"comp-video-service/backend/internal/service"
 )
+
+type taskService interface {
+	SaveResponse(ctx context.Context, presentationID uuid.UUID, req *model.TaskResponseRequest) (*model.Response, error)
+}
+
+type pairPresentationReader interface {
+	GetByID(ctx context.Context, id uuid.UUID) (*model.PairPresentation, error)
+}
+
+type interactionLogger interface {
+	Create(ctx context.Context, event *model.InteractionLog) (*model.InteractionLog, error)
+}
 
 // TaskHandler handles task response and event endpoints.
 type TaskHandler struct {
-	sessionSvc      *service.SessionService
-	pairRepo        *repository.PairPresentationRepository
-	interactionRepo *repository.InteractionLogRepository
+	sessionSvc      taskService
+	pairRepo        pairPresentationReader
+	interactionRepo interactionLogger
 }
 
 func NewTaskHandler(
-	sessionSvc *service.SessionService,
-	pairRepo *repository.PairPresentationRepository,
-	interactionRepo *repository.InteractionLogRepository,
+	sessionSvc taskService,
+	pairRepo pairPresentationReader,
+	interactionRepo interactionLogger,
 ) *TaskHandler {
 	return &TaskHandler{sessionSvc: sessionSvc, pairRepo: pairRepo, interactionRepo: interactionRepo}
 }

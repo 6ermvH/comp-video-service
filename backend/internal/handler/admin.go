@@ -1,7 +1,9 @@
 package handler
 
 import (
+	"context"
 	"fmt"
+	"io"
 	"mime/multipart"
 	"net/http"
 	"strings"
@@ -13,22 +15,50 @@ import (
 	"comp-video-service/backend/internal/service"
 )
 
+type studyService interface {
+	ListStudies(ctx context.Context) ([]*model.Study, error)
+	CreateStudy(ctx context.Context, req *model.CreateStudyRequest) (*model.Study, error)
+	UpdateStatus(ctx context.Context, id uuid.UUID, status string) (*model.Study, error)
+	ListGroups(ctx context.Context, studyID uuid.UUID) ([]*model.Group, error)
+	CreateGroup(ctx context.Context, studyID uuid.UUID, req *model.CreateGroupRequest) (*model.Group, error)
+	ImportSourceItemsCSV(ctx context.Context, studyID uuid.UUID, r io.Reader) (int, error)
+	ListSourceItems(ctx context.Context, studyID *uuid.UUID, groupID *uuid.UUID) ([]*model.SourceItem, error)
+}
+
+type assetService interface {
+	Upload(ctx context.Context, input service.AssetUploadInput) (*model.Video, error)
+}
+
+type analyticsService interface {
+	Overview(ctx context.Context) (*service.AnalyticsOverview, error)
+	StudyDetail(ctx context.Context, studyID uuid.UUID) (*service.StudyAnalytics, error)
+}
+
+type qcService interface {
+	BuildReport(ctx context.Context) (*service.QCReport, error)
+}
+
+type exportService interface {
+	ExportCSV(ctx context.Context) ([]byte, error)
+	ExportJSON(ctx context.Context) ([]byte, error)
+}
+
 // AdminHandler handles all admin-only endpoints.
 type AdminHandler struct {
-	studySvc     *service.StudyService
-	assetSvc     *service.AssetService
-	analyticsSvc *service.AnalyticsService
-	qcSvc        *service.QCService
-	exportSvc    *service.ExportService
+	studySvc     studyService
+	assetSvc     assetService
+	analyticsSvc analyticsService
+	qcSvc        qcService
+	exportSvc    exportService
 }
 
 // NewAdminHandler creates a new AdminHandler.
 func NewAdminHandler(
-	studySvc *service.StudyService,
-	assetSvc *service.AssetService,
-	analyticsSvc *service.AnalyticsService,
-	qcSvc *service.QCService,
-	exportSvc *service.ExportService,
+	studySvc studyService,
+	assetSvc assetService,
+	analyticsSvc analyticsService,
+	qcSvc qcService,
+	exportSvc exportService,
 ) *AdminHandler {
 	return &AdminHandler{
 		studySvc:     studySvc,
