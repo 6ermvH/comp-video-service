@@ -1,0 +1,53 @@
+# ───────── Environment ─────────
+.env
+*.env
+!.env.example
+
+# ───────── Go ─────────
+backend/bin/
+backend/vendor/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+go.work
+go.work.sum
+
+# ───────── Node / Frontend ─────────
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+frontend/.cache/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ───────── Docker ─────────
+docker-compose.override.yml
+
+# ───────── OS ─────────
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V7
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# ───────── IDEs ─────────
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# ───────── MinIO / S3 data (local dev) ─────────
+.minio/
+
+# ───────── Test artifacts ─────────
+coverage.out
+coverage.html
