@@ -4,8 +4,6 @@ import (
 	"context"
 
 	"github.com/google/uuid"
-
-	"comp-video-service/backend/internal/repository"
 )
 
 // QCReport is a lightweight quality control snapshot.
@@ -18,11 +16,26 @@ type QCReport struct {
 
 // QCService provides respondent quality checks.
 type QCService struct {
-	responseRepo    *repository.ResponseRepository
-	participantRepo *repository.ParticipantRepository
+	responseRepo    qcResponseRepository
+	participantRepo qcParticipantRepository
 }
 
-func NewQCService(responseRepo *repository.ResponseRepository, participantRepo *repository.ParticipantRepository) *QCService {
+type qcResponseRepository interface {
+	CountTotal(ctx context.Context) (int64, error)
+	CountFastResponses(ctx context.Context, thresholdMS int) (int64, error)
+	StraightLiningParticipants(ctx context.Context) (int64, error)
+	CountByParticipant(ctx context.Context, participantID uuid.UUID) (int64, error)
+	CountFastByParticipant(ctx context.Context, participantID uuid.UUID, thresholdMS int) (int64, error)
+	AttentionCheckStats(ctx context.Context, participantID uuid.UUID) (int64, int64, error)
+}
+
+type qcParticipantRepository interface {
+	UpdateQualityFlag(ctx context.Context, participantID uuid.UUID, qualityFlag string) error
+}
+
+//go:generate go run go.uber.org/mock/mockgen -source=qc.go -destination=qc_mocks_test.go -package=service
+
+func NewQCService(responseRepo qcResponseRepository, participantRepo qcParticipantRepository) *QCService {
 	return &QCService{responseRepo: responseRepo, participantRepo: participantRepo}
 }
 
