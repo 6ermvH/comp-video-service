@@ -15,16 +15,34 @@ import (
 
 // StudyService provides admin operations around studies/groups/source items.
 type StudyService struct {
-	studyRepo      *repository.StudyRepository
-	groupRepo      *repository.GroupRepository
-	sourceItemRepo *repository.SourceItemRepository
+	studyRepo      studyRepository
+	groupRepo      groupRepository
+	sourceItemRepo sourceItemRepository
 	videoRepo      *repository.VideoRepository
 }
 
+type studyRepository interface {
+	List(ctx context.Context) ([]*model.Study, error)
+	Create(ctx context.Context, req *model.CreateStudyRequest) (*model.Study, error)
+	UpdateStatus(ctx context.Context, id uuid.UUID, status string) (*model.Study, error)
+}
+
+type groupRepository interface {
+	Create(ctx context.Context, studyID uuid.UUID, req *model.CreateGroupRequest) (*model.Group, error)
+	ListByStudy(ctx context.Context, studyID uuid.UUID) ([]*model.Group, error)
+}
+
+type sourceItemRepository interface {
+	Create(ctx context.Context, item *model.SourceItem) (*model.SourceItem, error)
+	ListWithFilters(ctx context.Context, studyID *uuid.UUID, groupID *uuid.UUID) ([]*model.SourceItem, error)
+}
+
+//go:generate go run go.uber.org/mock/mockgen -source=study.go -destination=study_mocks_test.go -package=service
+
 func NewStudyService(
-	studyRepo *repository.StudyRepository,
-	groupRepo *repository.GroupRepository,
-	sourceItemRepo *repository.SourceItemRepository,
+	studyRepo studyRepository,
+	groupRepo groupRepository,
+	sourceItemRepo sourceItemRepository,
 	videoRepo *repository.VideoRepository,
 ) *StudyService {
 	return &StudyService{

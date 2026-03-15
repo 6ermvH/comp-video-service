@@ -9,22 +9,40 @@ import (
 	"github.com/google/uuid"
 
 	"comp-video-service/backend/internal/model"
-	"comp-video-service/backend/internal/repository"
 )
 
 // AssignmentService assigns randomized tasks to participants.
 type AssignmentService struct {
-	sourceItemRepo *repository.SourceItemRepository
-	groupRepo      *repository.GroupRepository
-	videoRepo      *repository.VideoRepository
-	pairRepo       *repository.PairPresentationRepository
+	sourceItemRepo assignmentSourceItemRepository
+	groupRepo      assignmentGroupRepository
+	videoRepo      assignmentVideoRepository
+	pairRepo       assignmentPairRepository
 }
 
+type assignmentSourceItemRepository interface {
+	ListByStudy(ctx context.Context, studyID uuid.UUID) ([]*model.SourceItem, error)
+	ResponseCountsByStudy(ctx context.Context, studyID uuid.UUID) (map[uuid.UUID]int64, error)
+}
+
+type assignmentGroupRepository interface {
+	ListByStudy(ctx context.Context, studyID uuid.UUID) ([]*model.Group, error)
+}
+
+type assignmentVideoRepository interface {
+	ListBySourceItem(ctx context.Context, sourceItemID uuid.UUID) ([]*model.Video, error)
+}
+
+type assignmentPairRepository interface {
+	Create(ctx context.Context, pp *model.PairPresentation) (*model.PairPresentation, error)
+}
+
+//go:generate go run go.uber.org/mock/mockgen -source=assignment.go -destination=assignment_mocks_test.go -package=service
+
 func NewAssignmentService(
-	sourceItemRepo *repository.SourceItemRepository,
-	groupRepo *repository.GroupRepository,
-	videoRepo *repository.VideoRepository,
-	pairRepo *repository.PairPresentationRepository,
+	sourceItemRepo assignmentSourceItemRepository,
+	groupRepo assignmentGroupRepository,
+	videoRepo assignmentVideoRepository,
+	pairRepo assignmentPairRepository,
 ) *AssignmentService {
 	return &AssignmentService{
 		sourceItemRepo: sourceItemRepo,

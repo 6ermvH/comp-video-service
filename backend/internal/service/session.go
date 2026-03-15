@@ -10,8 +10,6 @@ import (
 	"github.com/jackc/pgx/v5"
 
 	"comp-video-service/backend/internal/model"
-	"comp-video-service/backend/internal/repository"
-	"comp-video-service/backend/internal/storage"
 )
 
 // SessionStartResult is API response for /session/start.
@@ -41,26 +39,64 @@ type SessionStartMeta struct {
 
 // SessionService controls respondent lifecycle.
 type SessionService struct {
-	studyRepo       *repository.StudyRepository
-	participantRepo *repository.ParticipantRepository
-	pairRepo        *repository.PairPresentationRepository
-	videoRepo       *repository.VideoRepository
-	responseRepo    *repository.ResponseRepository
-	assignmentSvc   *AssignmentService
-	qcSvc           *QCService
-	s3              *storage.S3Client
+	studyRepo       sessionStudyRepository
+	participantRepo sessionParticipantRepository
+	pairRepo        sessionPairRepository
+	videoRepo       sessionVideoRepository
+	responseRepo    sessionResponseRepository
+	assignmentSvc   sessionAssignmentService
+	qcSvc           sessionQCService
+	s3              sessionStorage
 	presignTTL      time.Duration
 }
 
+type sessionStudyRepository interface {
+	GetByID(ctx context.Context, id uuid.UUID) (*model.Study, error)
+}
+
+type sessionParticipantRepository interface {
+	Create(ctx context.Context, p *model.Participant) (*model.Participant, error)
+	GetByToken(ctx context.Context, token string) (*model.Participant, error)
+	CompleteByToken(ctx context.Context, token string) error
+}
+
+type sessionPairRepository interface {
+	GetNextPendingByToken(ctx context.Context, sessionToken string) (*model.PairPresentation, error)
+	GetByID(ctx context.Context, id uuid.UUID) (*model.PairPresentation, error)
+}
+
+type sessionVideoRepository interface {
+	GetByID(ctx context.Context, id uuid.UUID) (*model.Video, error)
+}
+
+type sessionResponseRepository interface {
+	Create(ctx context.Context, resp *model.Response) (*model.Response, error)
+}
+
+type sessionAssignmentService interface {
+	AssignForParticipant(ctx context.Context, participantID, studyID uuid.UUID, maxTasks int) (int, error)
+}
+
+type sessionQCService interface {
+	UpdateParticipantFlag(ctx context.Context, participantID uuid.UUID, responseTimeMS *int) error
+	EvaluateParticipantFinalFlag(ctx context.Context, participantID uuid.UUID) error
+}
+
+type sessionStorage interface {
+	PresignedURL(ctx context.Context, key string, ttl time.Duration) (string, error)
+}
+
+//go:generate go run go.uber.org/mock/mockgen -source=session.go -destination=session_mocks_test.go -package=service
+
 func NewSessionService(
-	studyRepo *repository.StudyRepository,
-	participantRepo *repository.ParticipantRepository,
-	pairRepo *repository.PairPresentationRepository,
-	videoRepo *repository.VideoRepository,
-	responseRepo *repository.ResponseRepository,
-	assignmentSvc *AssignmentService,
-	qcSvc *QCService,
-	s3 *storage.S3Client,
+	studyRepo sessionStudyRepository,
+	participantRepo sessionParticipantRepository,
+	pairRepo sessionPairRepository,
+	videoRepo sessionVideoRepository,
+	responseRepo sessionResponseRepository,
+	assignmentSvc sessionAssignmentService,
+	qcSvc sessionQCService,
+	s3 sessionStorage,
 ) *SessionService {
 	return &SessionService{
 		studyRepo:       studyRepo,

@@ -1,0 +1,94 @@
+package service
+
+import (
+	"context"
+	"strings"
+	"testing"
+
+	"github.com/google/uuid"
+	"go.uber.org/mock/gomock"
+
+	"comp-video-service/backend/internal/model"
+)
+
+func TestStudyServiceBasicMethodsWithGomock(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	studyRepo := NewMockstudyRepository(ctrl)
+	groupRepo := NewMockgroupRepository(ctrl)
+	sourceRepo := NewMocksourceItemRepository(ctrl)
+	svc := NewStudyService(studyRepo, groupRepo, sourceRepo, nil)
+
+	studyRepo.EXPECT().List(gomock.Any()).Return([]*model.Study{{ID: uuid.New()}}, nil)
+	if _, err := svc.ListStudies(context.Background()); err != nil {
+		t.Fatalf("ListStudies: %v", err)
+	}
+
+	studyRepo.EXPECT().Create(gomock.Any(), gomock.Any()).Return(&model.Study{ID: uuid.New()}, nil)
+	if _, err := svc.CreateStudy(context.Background(), &model.CreateStudyRequest{Name: "s", EffectType: "flooding"}); err != nil {
+		t.Fatalf("CreateStudy: %v", err)
+	}
+
+	gid := uuid.New()
+	groupRepo.EXPECT().Create(gomock.Any(), gid, gomock.Any()).Return(&model.Group{ID: uuid.New()}, nil)
+	if _, err := svc.CreateGroup(context.Background(), gid, &model.CreateGroupRequest{Name: "g"}); err != nil {
+		t.Fatalf("CreateGroup: %v", err)
+	}
+
+	groupRepo.EXPECT().ListByStudy(gomock.Any(), gid).Return([]*model.Group{}, nil)
+	if _, err := svc.ListGroups(context.Background(), gid); err != nil {
+		t.Fatalf("ListGroups: %v", err)
+	}
+
+	sourceRepo.EXPECT().ListWithFilters(gomock.Any(), gomock.Nil(), gomock.Nil()).Return([]*model.SourceItem{}, nil)
+	if _, err := svc.ListSourceItems(context.Background(), nil, nil); err != nil {
+		t.Fatalf("ListSourceItems: %v", err)
+	}
+}
+
+func TestStudyServiceUpdateStatusValidation(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	studyRepo := NewMockstudyRepository(ctrl)
+	svc := NewStudyService(studyRepo, NewMockgroupRepository(ctrl), NewMocksourceItemRepository(ctrl), nil)
+
+	if _, err := svc.UpdateStatus(context.Background(), uuid.New(), "bad"); err == nil {
+		t.Fatal("expected invalid status error")
+	}
+
+	id := uuid.New()
+	studyRepo.EXPECT().UpdateStatus(gomock.Any(), id, "active").Return(&model.Study{ID: id, Status: "active"}, nil)
+	if _, err := svc.UpdateStatus(context.Background(), id, "ACTIVE"); err != nil {
+		t.Fatalf("UpdateStatus active: %v", err)
+	}
+}
+
+func TestStudyServiceImportSourceItemsCSV(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	sourceRepo := NewMocksourceItemRepository(ctrl)
+	svc := NewStudyService(NewMockstudyRepository(ctrl), NewMockgroupRepository(ctrl), sourceRepo, nil)
+
+	studyID := uuid.New()
+	groupID := uuid.New()
+	csvData := "group_id,source_image_id,pair_code,difficulty,is_attention_check,notes\n" +
+		groupID.String() + ",img,pair,hard,true,note\n"
+
+	sourceRepo.EXPECT().Create(gomock.Any(), gomock.Any()).DoAndReturn(func(_ context.Context, si *model.SourceItem) (*model.SourceItem, error) {
+		if si.StudyID != studyID || si.GroupID != groupID {
+			t.Fatalf("unexpected source item payload: %+v", si)
+		}
+		return &model.SourceItem{ID: uuid.New()}, nil
+	})
+
+	created, err := svc.ImportSourceItemsCSV(context.Background(), studyID, strings.NewReader(csvData))
+	if err != nil {
+		t.Fatalf("ImportSourceItemsCSV: %v", err)
+	}
+	if created != 1 {
+		t.Fatalf("expected created=1 got %d", created)
+	}
+}
