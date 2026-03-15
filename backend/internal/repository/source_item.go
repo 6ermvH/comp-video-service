@@ -1,0 +1,132 @@
+package repository
+
+import (
+	"context"
+	"fmt"
+
+	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgxpool"
+
+	"comp-video-service/backend/internal/model"
+)
+
+// SourceItemRepository provides source item queries.
+type SourceItemRepository struct {
+	db *pgxpool.Pool
+}
+
+func NewSourceItemRepository(db *pgxpool.Pool) *SourceItemRepository {
+	return &SourceItemRepository{db: db}
+}
+
+func (r *SourceItemRepository) Create(ctx context.Context, item *model.SourceItem) (*model.SourceItem, error) {
+	row := r.db.QueryRow(ctx, `
+		INSERT INTO source_items (
+			study_id, group_id, source_image_id, pair_code, difficulty, is_attention_check, notes
+		)
+		VALUES ($1,$2,$3,$4,$5,$6,$7)
+		RETURNING id, study_id, group_id, source_image_id, pair_code, difficulty,
+			is_attention_check, notes, created_at`,
+		item.StudyID, item.GroupID, item.SourceImageID, item.PairCode,
+		item.Difficulty, item.IsAttentionCheck, item.Notes,
+	)
+	return scanSourceItem(row)
+}
+
+func (r *SourceItemRepository) ListByStudy(ctx context.Context, studyID uuid.UUID) ([]*model.SourceItem, error) {
+	rows, err := r.db.Query(ctx, `
+		SELECT id, study_id, group_id, source_image_id, pair_code, difficulty,
+			is_attention_check, notes, created_at
+		FROM source_items
+		WHERE study_id = $1
+		ORDER BY created_at ASC`, studyID)
+	if err != nil {
+		return nil, fmt.Errorf("list source items: %w", err)
+	}
+	defer rows.Close()
+
+	out := make([]*model.SourceItem, 0)
+	for rows.Next() {
+		si, err := scanSourceItem(rows)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, si)
+	}
+	return out, rows.Err()
+}
+
+func (r *SourceItemRepository) ListWithFilters(ctx context.Context, studyID *uuid.UUID, groupID *uuid.UUID) ([]*model.SourceItem, error) {
+	q := `
+		SELECT id, study_id, group_id, source_image_id, pair_code, difficulty,
+			is_attention_check, notes, created_at
+		FROM source_items WHERE 1=1`
+	args := make([]any, 0, 2)
+	idx := 1
+	if studyID != nil {
+		q += fmt.Sprintf(" AND study_id = $%d", idx)
+		args = append(args, *studyID)
+		idx++
+	}
+	if groupID != nil {
+		q += fmt.Sprintf(" AND group_id = $%d", idx)
+		args = append(args, *groupID)
+	}
+	q += " ORDER BY created_at DESC"
+
+	rows, err := r.db.Query(ctx, q, args...)
+	if err != nil {
+		return nil, fmt.Errorf("list source items with filters: %w", err)
+	}
+	defer rows.Close()
+
+	out := make([]*model.SourceItem, 0)
+	for rows.Next() {
+		si, err := scanSourceItem(rows)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, si)
+	}
+	return out, rows.Err()
+}
+
+// ResponseCountsByStudy returns response counts per source item in a study.
+func (r *SourceItemRepository) ResponseCountsByStudy(ctx context.Context, studyID uuid.UUID) (map[uuid.UUID]int64, error) {
+	rows, err := r.db.Query(ctx, `
+		SELECT
+			si.id,
+			COUNT(r.id) AS response_count
+		FROM source_items si
+		LEFT JOIN pair_presentations pp ON pp.source_item_id = si.id
+		LEFT JOIN responses r ON r.pair_presentation_id = pp.id
+		WHERE si.study_id = $1
+		GROUP BY si.id`, studyID)
+	if err != nil {
+		return nil, fmt.Errorf("response counts by study: %w", err)
+	}
+	defer rows.Close()
+
+	out := make(map[uuid.UUID]int64)
+	for rows.Next() {
+		var sourceItemID uuid.UUID
+		var cnt int64
+		if err := rows.Scan(&sourceItemID, &cnt); err != nil {
+			return nil, fmt.Errorf("scan response counts by study: %w", err)
+		}
+		out[sourceItemID] = cnt
+	}
+	return out, rows.Err()
+}
+
+func scanSourceItem(row scanner) (*model.SourceItem, error) {
+	var s model.SourceItem
+	err := row.Scan(
+		&s.ID, &s.StudyID, &s.GroupID, &s.SourceImageID, &s.PairCode,
+		&s.Difficulty, &s.IsAttentionCheck, &s.Notes, &s.CreatedAt,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("scan source item: %w", err)
+	}
+	return &s, nil
+}
