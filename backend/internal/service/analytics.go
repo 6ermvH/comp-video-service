@@ -4,9 +4,8 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-
-	"comp-video-service/backend/internal/repository"
 )
 
 // EffectAnalytics is an effect-level aggregation.
@@ -48,12 +47,66 @@ type StudyAnalytics struct {
 
 // AnalyticsService provides analytics endpoints.
 type AnalyticsService struct {
-	db           *pgxpool.Pool
-	responseRepo *repository.ResponseRepository
+	db           analyticsDB
+	responseRepo analyticsResponseRepository
 }
 
-func NewAnalyticsService(db *pgxpool.Pool, responseRepo *repository.ResponseRepository) *AnalyticsService {
-	return &AnalyticsService{db: db, responseRepo: responseRepo}
+type analyticsResponseRepository interface {
+	CountTotal(ctx context.Context) (int64, error)
+	CountChoicesByStudy(ctx context.Context, studyID uuid.UUID) (left int64, right int64, tie int64, err error)
+}
+
+type analyticsRow interface {
+	Scan(dest ...any) error
+}
+
+type analyticsRows interface {
+	Next() bool
+	Scan(dest ...any) error
+	Err() error
+	Close()
+}
+
+type analyticsDB interface {
+	QueryRow(ctx context.Context, sql string, args ...any) analyticsRow
+	Query(ctx context.Context, sql string, args ...any) (analyticsRows, error)
+}
+
+type pgxAnalyticsDB struct {
+	pool *pgxpool.Pool
+}
+
+type pgxRowAdapter struct {
+	row pgx.Row
+}
+
+func (r pgxRowAdapter) Scan(dest ...any) error { return r.row.Scan(dest...) }
+
+type pgxRowsAdapter struct {
+	rows pgx.Rows
+}
+
+func (r pgxRowsAdapter) Next() bool             { return r.rows.Next() }
+func (r pgxRowsAdapter) Scan(dest ...any) error { return r.rows.Scan(dest...) }
+func (r pgxRowsAdapter) Err() error             { return r.rows.Err() }
+func (r pgxRowsAdapter) Close()                 { r.rows.Close() }
+
+func (d pgxAnalyticsDB) QueryRow(ctx context.Context, sql string, args ...any) analyticsRow {
+	return pgxRowAdapter{row: d.pool.QueryRow(ctx, sql, args...)}
+}
+
+func (d pgxAnalyticsDB) Query(ctx context.Context, sql string, args ...any) (analyticsRows, error) {
+	rows, err := d.pool.Query(ctx, sql, args...)
+	if err != nil {
+		return nil, err
+	}
+	return pgxRowsAdapter{rows: rows}, nil
+}
+
+//go:generate go run go.uber.org/mock/mockgen -source=analytics.go -destination=analytics_mocks_test.go -package=service
+
+func NewAnalyticsService(db *pgxpool.Pool, responseRepo analyticsResponseRepository) *AnalyticsService {
+	return &AnalyticsService{db: pgxAnalyticsDB{pool: db}, responseRepo: responseRepo}
 }
 
 func (s *AnalyticsService) Overview(ctx context.Context) (*AnalyticsOverview, error) {

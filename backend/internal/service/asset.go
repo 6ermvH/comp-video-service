@@ -10,7 +10,6 @@ import (
 
 	"comp-video-service/backend/internal/model"
 	"comp-video-service/backend/internal/repository"
-	"comp-video-service/backend/internal/storage"
 )
 
 // AssetUploadInput describes one uploaded video asset.
@@ -27,11 +26,34 @@ type AssetUploadInput struct {
 
 // AssetService handles video_assets upload and persistence.
 type AssetService struct {
-	videoRepo *repository.VideoRepository
-	s3        *storage.S3Client
+	videoRepo assetVideoRepository
+	s3        assetStorage
 }
 
-func NewAssetService(videoRepo *repository.VideoRepository, s3 *storage.S3Client) *AssetService {
+type assetVideoRepository interface {
+	Create(ctx context.Context, m *model.Video) (*model.Video, error)
+}
+
+type assetStorage interface {
+	Upload(ctx context.Context, key, contentType string, body io.Reader, size int64) error
+	Delete(ctx context.Context, key string) error
+}
+
+//go:generate go run go.uber.org/mock/mockgen -source=asset.go -destination=asset_mocks_test.go -package=service
+
+type videoRepositoryAdapter struct {
+	repo *repository.VideoRepository
+}
+
+func (a videoRepositoryAdapter) Create(ctx context.Context, m *model.Video) (*model.Video, error) {
+	return a.repo.Create(ctx, nil, m)
+}
+
+func NewAssetService(videoRepo *repository.VideoRepository, s3 assetStorage) *AssetService {
+	return newAssetServiceWithDeps(videoRepositoryAdapter{repo: videoRepo}, s3)
+}
+
+func newAssetServiceWithDeps(videoRepo assetVideoRepository, s3 assetStorage) *AssetService {
 	return &AssetService{videoRepo: videoRepo, s3: s3}
 }
 
@@ -51,7 +73,7 @@ func (s *AssetService) Upload(ctx context.Context, input AssetUploadInput) (*mod
 		title = strings.TrimSuffix(input.Filename, ".mp4")
 	}
 
-	asset, err := s.videoRepo.Create(ctx, nil, &model.Video{
+	asset, err := s.videoRepo.Create(ctx, &model.Video{
 		SourceItemID: input.SourceItemID,
 		MethodType:   nilIfEmpty(method),
 		Title:        title,

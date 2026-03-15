@@ -7,16 +7,51 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 // ExportService produces CSV and JSON snapshots for admin.
 type ExportService struct {
+	db exportDB
+}
+
+type exportRows interface {
+	Next() bool
+	Scan(dest ...any) error
+	Err() error
+	Close()
+}
+
+type exportDB interface {
+	Query(ctx context.Context, sql string, args ...any) (exportRows, error)
+}
+
+type pgxExportRows struct {
+	rows pgx.Rows
+}
+
+func (r pgxExportRows) Next() bool             { return r.rows.Next() }
+func (r pgxExportRows) Scan(dest ...any) error { return r.rows.Scan(dest...) }
+func (r pgxExportRows) Err() error             { return r.rows.Err() }
+func (r pgxExportRows) Close()                 { r.rows.Close() }
+
+type pgxExportDB struct {
 	db *pgxpool.Pool
 }
 
+func (d pgxExportDB) Query(ctx context.Context, sql string, args ...any) (exportRows, error) {
+	rows, err := d.db.Query(ctx, sql, args...)
+	if err != nil {
+		return nil, err
+	}
+	return pgxExportRows{rows: rows}, nil
+}
+
+//go:generate go run go.uber.org/mock/mockgen -source=export.go -destination=export_mocks_test.go -package=service
+
 func NewExportService(db *pgxpool.Pool) *ExportService {
-	return &ExportService{db: db}
+	return &ExportService{db: pgxExportDB{db: db}}
 }
 
 func (s *ExportService) ExportCSV(ctx context.Context) ([]byte, error) {
