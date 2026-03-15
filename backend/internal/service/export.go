@@ -6,6 +6,8 @@ import (
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
+	"strconv"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -58,14 +60,45 @@ func (s *ExportService) ExportCSV(ctx context.Context) ([]byte, error) {
 	}
 
 	for rows.Next() {
-		rec := make([]string, 14)
+		var (
+			responseID       string
+			participantID    string
+			sessionToken     string
+			studyID          string
+			pairPresentation string
+			sourceItemID     string
+			taskOrder        int
+			choice           string
+			reasonCodes      string
+			confidence       string
+			responseTimeMS   string
+			replayCount      int
+			isAttentionCheck bool
+			createdAt        time.Time
+		)
 		if err := rows.Scan(
-			&rec[0], &rec[1], &rec[2], &rec[3],
-			&rec[4], &rec[5], &rec[6], &rec[7],
-			&rec[8], &rec[9], &rec[10], &rec[11],
-			&rec[12], &rec[13],
+			&responseID, &participantID, &sessionToken, &studyID,
+			&pairPresentation, &sourceItemID, &taskOrder, &choice,
+			&reasonCodes, &confidence, &responseTimeMS, &replayCount,
+			&isAttentionCheck, &createdAt,
 		); err != nil {
 			return nil, fmt.Errorf("export csv scan: %w", err)
+		}
+		rec := []string{
+			responseID,
+			participantID,
+			sessionToken,
+			studyID,
+			pairPresentation,
+			sourceItemID,
+			strconv.Itoa(taskOrder),
+			choice,
+			reasonCodes,
+			confidence,
+			responseTimeMS,
+			strconv.Itoa(replayCount),
+			strconv.FormatBool(isAttentionCheck),
+			createdAt.UTC().Format(time.RFC3339Nano),
 		}
 		if err := writer.Write(rec); err != nil {
 			return nil, err

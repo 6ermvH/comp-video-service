@@ -6,7 +6,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/csv"
-	"os"
 	"testing"
 	"time"
 
@@ -190,19 +189,6 @@ func TestAssignmentPrefersUnderTargetSourceItems(t *testing.T) {
 	if assignedSource != sourceUnderTarget {
 		t.Fatalf("expected under-target source item %s, got %s", sourceUnderTarget, assignedSource)
 	}
-}
-
-func mustOpenDB(t *testing.T) *pgxpool.Pool {
-	t.Helper()
-	dsn := os.Getenv("DATABASE_URL")
-	if dsn == "" {
-		t.Skip("DATABASE_URL is not set")
-	}
-	db, err := pgxpool.New(context.Background(), dsn)
-	if err != nil {
-		t.Fatalf("pgxpool.New: %v", err)
-	}
-	return db
 }
 
 func mustCreateStudy(t *testing.T, ctx context.Context, db *pgxpool.Pool, suffix, status string) uuid.UUID {

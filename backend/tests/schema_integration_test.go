@@ -4,24 +4,12 @@ package tests
 
 import (
 	"context"
-	"os"
 	"testing"
-
-	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 func TestStudySchemaTablesExist(t *testing.T) {
-	dsn := os.Getenv("DATABASE_URL")
-	if dsn == "" {
-		t.Skip("DATABASE_URL is not set")
-	}
-
 	ctx := context.Background()
-	db, err := pgxpool.New(ctx, dsn)
-	if err != nil {
-		t.Fatalf("pgxpool.New: %v", err)
-	}
-	defer db.Close()
+	db := mustOpenDB(t)
 
 	tables := []string{
 		"studies",
