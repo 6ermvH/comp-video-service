@@ -1,0 +1,107 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: cvs_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-compvideo}
+      POSTGRES_USER: ${POSTGRES_USER:-cvs}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-cvs_secret}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-cvs} -d ${POSTGRES_DB:-compvideo}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  minio:
+    image: minio/minio:latest
+    container_name: cvs_minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+    volumes:
+      - minio_data:/data
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # MinIO bucket init (runs once)
+  minio-init:
+    image: minio/mc:latest
+    container_name: cvs_minio_init
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+        mc alias set local http://minio:9000 ${MINIO_ROOT_USER:-minioadmin} ${MINIO_ROOT_PASSWORD:-minioadmin};
+        mc mb --ignore-existing local/${S3_BUCKET:-videos};
+        mc anonymous set download local/${S3_BUCKET:-videos};
+        echo 'MinIO bucket ready';
+      "
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+      S3_BUCKET: ${S3_BUCKET:-videos}
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: cvs_backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    environment:
+      PORT: ${BACKEND_PORT:-8080}
+      DATABASE_URL: postgres://${POSTGRES_USER:-cvs}:${POSTGRES_PASSWORD:-cvs_secret}@postgres:5432/${POSTGRES_DB:-compvideo}?sslmode=disable
+      JWT_SECRET: ${JWT_SECRET:-change_me_in_production}
+      S3_ENDPOINT: http://minio:9000
+      S3_ACCESS_KEY: ${MINIO_ROOT_USER:-minioadmin}
+      S3_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin}
+      S3_BUCKET: ${S3_BUCKET:-videos}
+      S3_USE_SSL: "false"
+      S3_PUBLIC_URL: ${S3_PUBLIC_URL:-http://localhost:9000}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173}
+      MIGRATIONS_PATH: ${MIGRATIONS_PATH:-file:///migrations}
+    volumes:
+      - ./backend/migrations:/migrations:ro
+    ports:
+      - "${BACKEND_PORT:-8080}:8080"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: cvs_frontend
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    environment:
+      VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8080}
+    ports:
+      - "5173:80"
+
+volumes:
+  postgres_data:
+  minio_data:
