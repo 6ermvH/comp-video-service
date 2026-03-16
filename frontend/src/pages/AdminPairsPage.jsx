@@ -182,7 +182,7 @@ export default function AdminPairsPage() {
                 style={{ display: 'flex', flexDirection: 'column', gap: '12px',
                   padding: '16px', background: 'var(--color-surface-2)',
                   borderRadius: 'var(--radius-sm)', marginBottom: '16px' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '12px' }}>
                   <div>
                     <label className="label">Название *</label>
                     <input className="input" required value={groupForm.name}
@@ -220,6 +220,7 @@ export default function AdminPairsPage() {
               </p>
             ) : (
               <>
+              <div style={{ overflowX: 'auto' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                   <thead>
                     <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
@@ -250,6 +251,7 @@ export default function AdminPairsPage() {
                     ))}
                   </tbody>
                 </table>
+              </div>
                 <p style={{ marginTop: '10px', fontSize: '13px', color: 'var(--color-text-muted)' }}>
                   Скопируйте UUID нужной группы в первую колонку CSV для импорта пар.
                 </p>
@@ -287,7 +289,7 @@ export default function AdminPairsPage() {
               </p>
             ) : (
               <form onSubmit={handleUploadAsset} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '14px' }}>
                   <div>
                     <label className="label">Пара *</label>
                     <select className="input"
@@ -310,7 +312,7 @@ export default function AdminPairsPage() {
                     </select>
                   </div>
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '14px' }}>
                   <div>
                     <label className="label">Название (необязательно)</label>
                     <input className="input" placeholder="Название ассета"

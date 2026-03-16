@@ -23,10 +23,10 @@ export default function CompletionPage() {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      padding: '24px',
+      padding: 'clamp(16px, 4vw, 24px)',
       background: 'var(--color-bg)',
     }}>
-      <div style={{ maxWidth: '520px', width: '100%', textAlign: 'center' }}>
+      <div style={{ maxWidth: 'min(520px, 100%)', width: '100%', textAlign: 'center' }}>
 
         <div style={{ fontSize: '72px', marginBottom: '24px' }}>🎉</div>
 

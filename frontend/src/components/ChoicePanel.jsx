@@ -20,6 +20,7 @@ export default function ChoicePanel({ choice, onChange, disabled, tieEnabled = t
             disabled={disabled}
             style={{
               minWidth: '112px',
+              minHeight: '44px',
               padding: '10px 14px',
               border: `2px solid ${selected ? opt.color : 'var(--color-border)'}`,
               borderRadius: 'var(--radius-md)',

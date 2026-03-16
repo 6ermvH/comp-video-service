@@ -30,10 +30,10 @@ export default function WelcomePage() {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      padding: '24px',
+      padding: 'clamp(16px, 4vw, 24px)',
       background: 'var(--color-bg)',
     }}>
-      <div style={{ maxWidth: '520px', width: '100%' }}>
+      <div style={{ maxWidth: 'min(520px, 100%)', width: '100%' }}>
 
         <div style={{ textAlign: 'center', marginBottom: '40px' }}>
           <h1 style={{ fontSize: '28px', fontWeight: 700, marginBottom: '12px' }}>
@@ -100,7 +100,7 @@ export default function WelcomePage() {
             type="submit"
             className="btn btn-primary"
             disabled={!isValid || loading}
-            style={{ padding: '16px', fontSize: '16px', marginTop: '8px' }}
+            style={{ padding: '16px', fontSize: '16px', marginTop: '8px', width: '100%' }}
           >
             {loading ? 'Запуск…' : 'Начать участие →'}
           </button>

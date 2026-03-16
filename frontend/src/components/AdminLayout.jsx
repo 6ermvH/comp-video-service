@@ -1,6 +1,7 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Outlet, Link, useNavigate, useLocation, Navigate } from 'react-router-dom'
 import { auth, setUnauthorizedHandler } from '../api/client.js'
+import { useWindowWidth } from '../hooks/useWindowWidth.js'
 
 const NAV_ITEMS = [
   { path: '/admin/studies',   label: 'Исследования', icon: '🔬' },
@@ -11,6 +12,8 @@ const NAV_ITEMS = [
 export default function AdminLayout() {
   const navigate = useNavigate()
   const location = useLocation()
+  const isMobile = useWindowWidth() <= 768
+  const [sidebarOpen, setSidebarOpen] = useState(false)
 
   // Register handler so client.js can trigger logout on 401/403
   // (must be before any conditional returns — Rules of Hooks)
@@ -22,6 +25,11 @@ export default function AdminLayout() {
     return () => setUnauthorizedHandler(null)
   }, [navigate])
 
+  // Close sidebar on navigation
+  useEffect(() => {
+    setSidebarOpen(false)
+  }, [location.pathname])
+
   if (!auth.isLoggedIn()) {
     return <Navigate to="/admin/login" replace state={{ from: location }} />
   }
@@ -31,17 +39,36 @@ export default function AdminLayout() {
     navigate('/admin/login')
   }
 
+  const sidebarStyle = {
+    width: '240px',
+    background: 'var(--color-surface)',
+    borderRight: '1px solid var(--color-border)',
+    padding: '24px 16px',
+    display: 'flex',
+    flexDirection: 'column',
+    flexShrink: 0,
+    ...(isMobile ? {
+      position: 'fixed',
+      top: 0,
+      left: sidebarOpen ? 0 : '-240px',
+      height: '100vh',
+      zIndex: 200,
+      transition: 'left 0.2s ease',
+    } : {}),
+  }
+
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--color-bg)' }}>
-      <aside style={{
-        width: '240px',
-        background: 'var(--color-surface)',
-        borderRight: '1px solid var(--color-border)',
-        padding: '24px 16px',
-        display: 'flex',
-        flexDirection: 'column',
-        flexShrink: 0,
-      }}>
+
+      {/* Mobile overlay */}
+      {isMobile && sidebarOpen && (
+        <div
+          onClick={() => setSidebarOpen(false)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 199 }}
+        />
+      )}
+
+      <aside style={sidebarStyle}>
         <div style={{ marginBottom: '32px', paddingLeft: '8px' }}>
           <Link to="/" style={{
             fontSize: '15px', fontWeight: 700, color: 'var(--color-text)',
@@ -94,8 +121,25 @@ export default function AdminLayout() {
         </button>
       </aside>
 
-      <main style={{ flex: 1, overflowY: 'auto' }}>
-        <div style={{ padding: '32px', maxWidth: '1100px', margin: '0 auto' }}>
+      <main style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden' }}>
+        {isMobile && (
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: '12px',
+            padding: '12px 16px',
+            borderBottom: '1px solid var(--color-border)',
+            background: 'var(--color-surface)',
+            position: 'sticky', top: 0, zIndex: 100,
+          }}>
+            <button
+              onClick={() => setSidebarOpen((v) => !v)}
+              style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer', color: 'var(--color-text)', lineHeight: 1 }}
+            >
+              ☰
+            </button>
+            <span style={{ fontSize: '15px', fontWeight: 600 }}>VideoCompare Admin</span>
+          </div>
+        )}
+        <div style={{ padding: isMobile ? '16px' : '32px', maxWidth: '1100px', margin: '0 auto' }}>
           <Outlet />
         </div>
       </main>

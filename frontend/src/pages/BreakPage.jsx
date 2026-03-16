@@ -19,10 +19,10 @@ export default function BreakPage() {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      padding: '24px',
+      padding: 'clamp(16px, 4vw, 24px)',
       background: 'var(--color-bg)',
     }}>
-      <div style={{ maxWidth: '500px', width: '100%', textAlign: 'center' }}>
+      <div style={{ maxWidth: 'min(500px, 100%)', width: '100%', textAlign: 'center' }}>
 
         <div style={{ fontSize: '64px', marginBottom: '24px' }}>☕</div>
 
@@ -51,7 +51,7 @@ export default function BreakPage() {
         <button
           className="btn btn-primary"
           onClick={() => navigate('/task')}
-          style={{ padding: '14px 40px', fontSize: '16px' }}
+          style={{ padding: '14px 40px', fontSize: '16px', width: '100%' }}
         >
           Продолжить →
         </button>

@@ -18,10 +18,10 @@ export default function InstructionsPage() {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      padding: '24px',
+      padding: 'clamp(16px, 4vw, 24px)',
       background: 'var(--color-bg)',
     }}>
-      <div style={{ maxWidth: '680px', width: '100%' }}>
+      <div style={{ maxWidth: 'min(680px, 100%)', width: '100%' }}>
 
         <h1 style={{ fontSize: '26px', fontWeight: 700, marginBottom: '24px', textAlign: 'center' }}>
           Инструкции
@@ -66,7 +66,7 @@ export default function InstructionsPage() {
                 <h3 style={{ fontSize: '17px', marginBottom: '10px', color: 'var(--color-primary-h)' }}>
                   Управление
                 </h3>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px',
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '8px',
                   fontSize: '14px', color: 'var(--color-text-muted)' }}>
                   <span><kbd style={kbdStyle}>1</kbd> — Видео A лучше</span>
                   <span><kbd style={kbdStyle}>2</kbd> — Видео B лучше</span>
@@ -97,7 +97,7 @@ export default function InstructionsPage() {
           <button
             className="btn btn-primary"
             onClick={() => navigate('/practice')}
-            style={{ padding: '14px 40px', fontSize: '16px' }}
+            style={{ padding: '14px 40px', fontSize: '16px', width: '100%' }}
           >
             Понятно, начнём тренировку →
           </button>
