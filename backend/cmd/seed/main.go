@@ -20,9 +20,13 @@ import (
 )
 
 func main() {
-	username := flag.String("username", env("SEED_USERNAME", env("DEFAULT_ADMIN_USERNAME", "admin")), "admin username")
-	password := flag.String("password", env("SEED_PASSWORD", env("DEFAULT_ADMIN_PASSWORD", "admin_123_videogen")), "admin password")
+	username := flag.String("username", env("SEED_USERNAME", "admin"), "admin username")
+	password := flag.String("password", env("SEED_PASSWORD", ""), "admin password (required)")
 	flag.Parse()
+
+	if *password == "" {
+		log.Fatal("password is required: use -password flag or SEED_PASSWORD env var")
+	}
 
 	dsn := env("DATABASE_URL", "")
 	if dsn == "" {
