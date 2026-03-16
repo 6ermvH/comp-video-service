@@ -19,8 +19,6 @@ const SyncVideoPlayer = forwardRef(function SyncVideoPlayer(
   const [leftReady, setLeftReady] = useState(false)
   const [rightReady, setRightReady] = useState(false)
   const [playing, setPlaying] = useState(false)
-  const [leftEnded, setLeftEnded] = useState(false)
-  const [rightEnded, setRightEnded] = useState(false)
   const endedRef = useRef({ left: false, right: false })
 
   const bothReady = leftReady && rightReady
@@ -30,8 +28,6 @@ const SyncVideoPlayer = forwardRef(function SyncVideoPlayer(
     setLeftReady(false)
     setRightReady(false)
     setPlaying(false)
-    setLeftEnded(false)
-    setRightEnded(false)
     endedRef.current = { left: false, right: false }
   }, [leftUrl, rightUrl])
 
@@ -52,8 +48,6 @@ const SyncVideoPlayer = forwardRef(function SyncVideoPlayer(
 
   const handleEnded = (side) => {
     endedRef.current[side] = true
-    if (side === 'left') setLeftEnded(true)
-    else setRightEnded(true)
 
     if (endedRef.current.left && endedRef.current.right) {
       setPlaying(false)
@@ -69,8 +63,6 @@ const SyncVideoPlayer = forwardRef(function SyncVideoPlayer(
     left.currentTime = 0
     right.currentTime = 0
     endedRef.current = { left: false, right: false }
-    setLeftEnded(false)
-    setRightEnded(false)
 
     Promise.all([left.play(), right.play()])
       .then(() => setPlaying(true))
