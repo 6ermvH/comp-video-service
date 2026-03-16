@@ -1,6 +1,0 @@
-group_id,source_image_id,pair_code,difficulty,is_attention_check,notes,baseline_s3_key,candidate_s3_key
-e3ae5d7d-f14a-4b41-bc76-7d008614afe1,img_001,flood_001,easy,false,сцена с рекой,,
-e3ae5d7d-f14a-4b41-bc76-7d008614afe1,img_002,flood_002,medium,false,городская улица,,
-e3ae5d7d-f14a-4b41-bc76-7d008614afe1,img_003,flood_003,hard,true,контрольная пара,,
-4a0d74c6-12b2-469f-be7b-40598222582c,img_004,flood_004,easy,false,парк,,
-4a0d74c6-12b2-469f-be7b-40598222582c,img_005,flood_005,medium,false,подвал здания,,
