@@ -32,3 +32,18 @@ func (r *AdminRepository) GetByUsername(ctx context.Context, username string) (*
 	}
 	return &a, nil
 }
+
+// Upsert replaces or creates the admin credentials for the given username.
+func (r *AdminRepository) Upsert(ctx context.Context, username, passwordHash string) error {
+	_, err := r.db.Exec(ctx, `
+		INSERT INTO admins (username, password_hash)
+		VALUES ($1, $2)
+		ON CONFLICT (username)
+		DO UPDATE SET password_hash = EXCLUDED.password_hash`,
+		username, passwordHash,
+	)
+	if err != nil {
+		return fmt.Errorf("upsert admin: %w", err)
+	}
+	return nil
+}

@@ -100,10 +100,12 @@ const SyncVideoPlayer = forwardRef(function SyncVideoPlayer(
 
   const videoStyle = {
     width: '100%',
+    height: '100%',
     aspectRatio: '16/9',
     background: '#000',
     borderRadius: '8px',
     display: 'block',
+    objectFit: 'contain',
   }
 
   const loadingOverlayStyle = {
@@ -117,16 +119,11 @@ const SyncVideoPlayer = forwardRef(function SyncVideoPlayer(
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%', height: '100%' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0px', flex: '1 1 auto', minHeight: 0 }}>
 
         {/* Left video */}
-        <div style={{ position: 'relative' }}>
-          <div style={{ position: 'absolute', top: '8px', left: '8px', zIndex: 10,
-            background: 'rgba(0,0,0,0.7)', color: '#fff', fontSize: '13px',
-            fontWeight: 700, padding: '3px 10px', borderRadius: '4px', letterSpacing: '0.05em' }}>
-            A
-          </div>
+        <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
           {!leftReady && (
             <div style={loadingOverlayStyle}>
               <div className="spinner" style={{ width: 28, height: 28 }} />
@@ -135,7 +132,7 @@ const SyncVideoPlayer = forwardRef(function SyncVideoPlayer(
           <video
             ref={leftRef}
             src={leftUrl}
-            style={videoStyle}
+            style={{ ...videoStyle, objectPosition: 'right center' }}
             preload="auto"
             playsInline
             controlsList="nodownload nofullscreen"
@@ -147,12 +144,7 @@ const SyncVideoPlayer = forwardRef(function SyncVideoPlayer(
         </div>
 
         {/* Right video */}
-        <div style={{ position: 'relative' }}>
-          <div style={{ position: 'absolute', top: '8px', left: '8px', zIndex: 10,
-            background: 'rgba(0,0,0,0.7)', color: '#fff', fontSize: '13px',
-            fontWeight: 700, padding: '3px 10px', borderRadius: '4px', letterSpacing: '0.05em' }}>
-            B
-          </div>
+        <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
           {!rightReady && (
             <div style={loadingOverlayStyle}>
               <div className="spinner" style={{ width: 28, height: 28 }} />
@@ -161,7 +153,7 @@ const SyncVideoPlayer = forwardRef(function SyncVideoPlayer(
           <video
             ref={rightRef}
             src={rightUrl}
-            style={videoStyle}
+            style={{ ...videoStyle, objectPosition: 'left center' }}
             preload="auto"
             playsInline
             controlsList="nodownload nofullscreen"
@@ -173,35 +165,53 @@ const SyncVideoPlayer = forwardRef(function SyncVideoPlayer(
         </div>
       </div>
 
-      {/* Controls */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px' }}>
-        {!bothReady ? (
-          <span style={{ color: 'var(--color-text-muted)', fontSize: '14px' }}>
-            Загрузка видео…
-          </span>
-        ) : (
-          <>
-            <button
-              className="btn btn-ghost"
-              onClick={togglePlayPause}
-              style={{ minWidth: '100px' }}
-            >
-              {playing ? '⏸ Пауза' : '▶ Воспроизвести'}
-            </button>
-            <button
-              className="btn btn-ghost"
-              onClick={replay}
-              title="Повторить (R)"
-            >
-              ↺ Повторить
-            </button>
-            {(leftEnded || rightEnded) && !playing && (
-              <span style={{ color: 'var(--color-text-muted)', fontSize: '13px' }}>
-                Просмотр завершён
-              </span>
-            )}
-          </>
-        )}
+      {/* Labels + controls */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: '1fr auto 1fr',
+        alignItems: 'center',
+        gap: '16px',
+      }}>
+        <div style={{
+          textAlign: 'center',
+          color: 'var(--color-text)',
+          fontSize: '17px',
+          fontWeight: 700,
+        }}>
+          Вариант A
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px' }}>
+          {!bothReady ? (
+            <span style={{ color: 'var(--color-text-muted)', fontSize: '14px' }}>
+              Загрузка видео…
+            </span>
+          ) : (
+            <>
+              <button
+                className="btn btn-ghost"
+                onClick={togglePlayPause}
+                style={{ width: '170px', justifyContent: 'center' }}
+              >
+                {playing ? '⏸ Пауза' : '▶ Воспроизвести'}
+              </button>
+              <button
+                className="btn btn-ghost"
+                onClick={replay}
+                title="Повторить (R)"
+              >
+                ↺ Повторить
+              </button>
+            </>
+          )}
+        </div>
+        <div style={{
+          textAlign: 'center',
+          color: 'var(--color-text)',
+          fontSize: '17px',
+          fontWeight: 700,
+        }}>
+          Вариант B
+        </div>
       </div>
     </div>
   )

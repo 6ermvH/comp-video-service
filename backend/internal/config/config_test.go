@@ -14,6 +14,12 @@ func TestLoadDefaultsAndRequiredJWT(t *testing.T) {
 	if cfg.Port != "8080" {
 		t.Fatalf("expected default port 8080, got %s", cfg.Port)
 	}
+	if cfg.DefaultAdminUsername != "admin" {
+		t.Fatalf("expected default admin username, got %s", cfg.DefaultAdminUsername)
+	}
+	if cfg.DefaultAdminPassword != "admin_123_videogen" {
+		t.Fatalf("expected default admin password, got %s", cfg.DefaultAdminPassword)
+	}
 	if cfg.MigrationsPath == "" {
 		t.Fatal("expected default migrations path")
 	}
@@ -33,6 +39,8 @@ func TestLoadOverrides(t *testing.T) {
 	t.Setenv("PORT", "9999")
 	t.Setenv("CORS_ORIGINS", "http://a.local, http://b.local")
 	t.Setenv("MIGRATIONS_PATH", "file:///tmp/migrations")
+	t.Setenv("DEFAULT_ADMIN_USERNAME", "root")
+	t.Setenv("DEFAULT_ADMIN_PASSWORD", "super-secret")
 
 	cfg, err := Load()
 	if err != nil {
@@ -43,6 +51,12 @@ func TestLoadOverrides(t *testing.T) {
 	}
 	if len(cfg.CORSOrigins) != 2 {
 		t.Fatalf("expected 2 cors origins, got %d", len(cfg.CORSOrigins))
+	}
+	if cfg.DefaultAdminUsername != "root" {
+		t.Fatalf("expected admin username override, got %s", cfg.DefaultAdminUsername)
+	}
+	if cfg.DefaultAdminPassword != "super-secret" {
+		t.Fatalf("expected admin password override, got %s", cfg.DefaultAdminPassword)
 	}
 	if cfg.MigrationsPath != "file:///tmp/migrations" {
 		t.Fatalf("expected migrations override, got %s", cfg.MigrationsPath)

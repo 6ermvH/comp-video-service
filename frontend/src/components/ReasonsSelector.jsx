@@ -3,13 +3,10 @@
  * Only shown after a choice (left/right) is made, not for "tie".
  */
 const REASONS = [
-  { code: 'motion',      label: 'Более реалистичное движение' },
-  { code: 'particles',   label: 'Лучшее поведение частиц' },
+  { code: 'motion',      label: 'Более правдоподобный эффект' },
   { code: 'artifacts',   label: 'Меньше артефактов' },
   { code: 'integration', label: 'Лучшая интеграция в сцену' },
-  { code: 'timing',      label: 'Лучший тайминг / ритм' },
-  { code: 'shape',       label: 'Лучшая форма / плотность' },
-  { code: 'overall',     label: 'Лучшее общее качество' },
+  { code: 'overall',     label: 'Лучше общее качество' },
 ]
 
 const MAX_SELECTED = 2
@@ -26,10 +23,10 @@ export default function ReasonsSelector({ selected, onChange, disabled }) {
 
   return (
     <div>
-      <p style={{ fontSize: '13px', color: 'var(--color-text-muted)', marginBottom: '10px' }}>
+      <p style={{ fontSize: '12px', color: 'var(--color-text-muted)', marginBottom: '6px' }}>
         Причина (необязательно, до {MAX_SELECTED}):
       </p>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
         {REASONS.map((r) => {
           const active = selected.includes(r.code)
           const maxed = !active && selected.length >= MAX_SELECTED
@@ -39,12 +36,12 @@ export default function ReasonsSelector({ selected, onChange, disabled }) {
               onClick={() => toggle(r.code)}
               disabled={disabled || maxed}
               style={{
-                padding: '6px 14px',
+                padding: '5px 10px',
                 border: `1px solid ${active ? 'var(--color-primary)' : 'var(--color-border)'}`,
                 borderRadius: '99px',
                 background: active ? 'rgba(108,99,255,0.2)' : 'transparent',
                 color: active ? 'var(--color-primary-h)' : maxed ? 'var(--color-text-muted)' : 'var(--color-text)',
-                fontSize: '13px',
+                fontSize: '12px',
                 cursor: disabled || maxed ? 'not-allowed' : 'pointer',
                 transition: 'all 0.15s ease',
                 opacity: maxed ? 0.5 : 1,

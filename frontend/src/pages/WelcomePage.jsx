@@ -2,29 +2,12 @@ import { useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useSession } from '../context/SessionContext.jsx'
 
-const ROLES = [
-  { value: 'general_viewer',   label: 'Обычный зритель' },
-  { value: 'ml_practitioner',  label: 'ML / AI-специалист' },
-  { value: 'vfx_artist',       label: 'VFX / CGI-художник' },
-  { value: 'researcher',       label: 'Исследователь' },
-  { value: 'other',            label: 'Другое' },
-]
-
-const EXPERIENCE = [
-  { value: 'none',     label: 'Нет опыта' },
-  { value: 'limited',  label: 'Небольшой опыт' },
-  { value: 'moderate', label: 'Умеренный опыт' },
-  { value: 'strong',   label: 'Большой опыт' },
-]
-
 export default function WelcomePage() {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const { startSession, loading, error } = useSession()
 
   const [studyId, setStudyId] = useState(searchParams.get('study_id') || '')
-  const [role, setRole] = useState('')
-  const [experience, setExperience] = useState('')
   const [consent, setConsent] = useState(false)
 
   const deviceType = /Mobi|Android/i.test(navigator.userAgent) ? 'mobile' : 'desktop'
@@ -34,12 +17,12 @@ export default function WelcomePage() {
     if (!consent) return
 
     try {
-      await startSession(studyId, { role, experience, deviceType })
+      await startSession(studyId, { role: '', experience: '', deviceType })
       navigate('/instructions')
     } catch (_) { /* error shown via context */ }
   }
 
-  const isValid = studyId.trim() && role && experience && consent
+  const isValid = studyId.trim() && consent
 
   return (
     <div style={{
@@ -83,36 +66,6 @@ export default function WelcomePage() {
               />
             </div>
           )}
-
-          <div>
-            <label className="label">Ваша роль *</label>
-            <select
-              className="input"
-              value={role}
-              onChange={(e) => setRole(e.target.value)}
-              required
-            >
-              <option value="">Выберите роль…</option>
-              {ROLES.map((r) => (
-                <option key={r.value} value={r.value}>{r.label}</option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="label">Опыт работы с VFX / симуляциями *</label>
-            <select
-              className="input"
-              value={experience}
-              onChange={(e) => setExperience(e.target.value)}
-              required
-            >
-              <option value="">Выберите уровень…</option>
-              {EXPERIENCE.map((e) => (
-                <option key={e.value} value={e.value}>{e.label}</option>
-              ))}
-            </select>
-          </div>
 
           <label style={{
             display: 'flex', gap: '12px', alignItems: 'flex-start',

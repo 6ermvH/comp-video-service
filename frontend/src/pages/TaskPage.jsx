@@ -143,41 +143,52 @@ export default function TaskPage({ isPractice = false }) {
   const tieEnabled    = studyMeta?.tie_option_enabled ?? true
   const showReasons   = studyMeta?.reasons_enabled    ?? true
   const showConfidence = studyMeta?.confidence_enabled ?? true
+  const hasDetailedFeedback = choice && choice !== 'tie'
 
   return (
     <div style={{
       minHeight: '100vh',
       background: 'var(--color-bg)',
-      padding: '20px 24px',
+      padding: '10px 4px 20px',
       display: 'flex',
       flexDirection: 'column',
-      gap: '16px',
-      maxWidth: '1100px',
+      gap: '4px',
+      width: '100%',
+      maxWidth: 'none',
       margin: '0 auto',
     }}>
 
-      {/* Progress */}
-      <ProgressBar
-        current={currentTask.task_order}
-        total={tasksTotal}
-        isPractice={currentTask.is_practice}
-      />
-
       {/* Synchronized video player */}
-      <SyncVideoPlayer
-        ref={playerRef}
-        leftUrl={currentTask.left_video_url}
-        rightUrl={currentTask.right_video_url}
-        onReplay={handleReplay}
-        onEnded={() => { /* tracking hook */ }}
-      />
+      <div style={{
+        width: 'calc(100vw - 8px)',
+        maxWidth: 'none',
+        marginLeft: 'calc(50% - 50vw + 4px)',
+        marginRight: 'calc(50% - 50vw + 4px)',
+        display: 'flex',
+      }}>
+        <SyncVideoPlayer
+          ref={playerRef}
+          leftUrl={currentTask.left_video_url}
+          rightUrl={currentTask.right_video_url}
+          onReplay={handleReplay}
+          onEnded={() => { /* tracking hook */ }}
+        />
+      </div>
 
       {/* Response panel */}
-      <div className="card" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      <div className="card" style={{
+        width: '100%',
+        maxWidth: '980px',
+        margin: '60px auto 0',
+        padding: '12px 16px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '10px',
+      }}>
 
         <div style={{ textAlign: 'center' }}>
-          <p style={{ fontSize: '15px', color: 'var(--color-text-muted)', marginBottom: '12px' }}>
-            Какое видео выглядит более реалистично?
+          <p style={{ fontSize: '13px', color: 'var(--color-text-muted)', marginBottom: '8px', whiteSpace: 'pre-line', lineHeight: 1.5 }}>
+            {'Какое видео выглядит лучше в целом ?\nОриентируйтесь на правдоподобие эффекта, стабильность, отсутствие артефактов и общую визуальную целостность.'}
           </p>
           <ChoicePanel
             choice={choice}
@@ -187,7 +198,7 @@ export default function TaskPage({ isPractice = false }) {
           />
         </div>
 
-        {showReasons && choice && choice !== 'tie' && (
+        {showReasons && hasDetailedFeedback && (
           <ReasonsSelector
             selected={reasons}
             onChange={setReasons}
@@ -195,27 +206,41 @@ export default function TaskPage({ isPractice = false }) {
           />
         )}
 
-        {showConfidence && choice && (
-          <ConfidenceRating
-            value={confidence}
-            onChange={setConfidence}
-            disabled={submitting}
-          />
-        )}
-
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ fontSize: '13px', color: 'var(--color-text-muted)' }}>
-            {replayCount > 0 && `↺ ${replayCount} повтор${replayCount === 1 ? '' : 'а'}`}
+        {showConfidence && hasDetailedFeedback ? (
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'flex-end',
+            gap: '16px',
+            flexWrap: 'wrap',
+          }}>
+            <ConfidenceRating
+              value={confidence}
+              onChange={setConfidence}
+              disabled={submitting}
+            />
+            <button
+              className="btn btn-primary"
+              onClick={handleSubmit}
+              disabled={!choice || submitting}
+              style={{ minWidth: '140px', padding: '10px 18px' }}
+            >
+              {submitting ? 'Отправка…' : 'Следующее →'}
+            </button>
           </div>
-          <button
-            className="btn btn-primary"
-            onClick={handleSubmit}
-            disabled={!choice || submitting}
-            style={{ minWidth: '160px', padding: '12px 24px' }}
-          >
-            {submitting ? 'Отправка…' : 'Следующее →'}
-          </button>
-        </div>
+        ) : (
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div />
+            <button
+              className="btn btn-primary"
+              onClick={handleSubmit}
+              disabled={!choice || submitting}
+              style={{ minWidth: '140px', padding: '10px 18px' }}
+            >
+              {submitting ? 'Отправка…' : 'Следующее →'}
+            </button>
+          </div>
+        )}
 
         {currentTask.is_practice && (
           <div style={{
@@ -242,11 +267,15 @@ export default function TaskPage({ isPractice = false }) {
         )}
       </div>
 
-      {/* Keyboard hint */}
-      <p style={{ textAlign: 'center', fontSize: '12px', color: 'var(--color-text-muted)' }}>
-        Клавиши: <strong>1</strong> — A, <strong>2</strong> — B, <strong>0</strong> — равны,
-        {' '}<strong>R</strong> — повтор, <strong>N</strong> / Enter — далее
-      </p>
+      {/* Progress */}
+      <div style={{ width: '100%', maxWidth: '1280px', margin: 'auto auto 0', paddingTop: '8px' }}>
+        <ProgressBar
+          current={currentTask.task_order}
+          total={tasksTotal}
+          isPractice={currentTask.is_practice}
+        />
+      </div>
+
     </div>
   )
 }
