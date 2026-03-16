@@ -16,7 +16,6 @@ import (
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/rs/cors"
-	"golang.org/x/crypto/bcrypt"
 
 	"comp-video-service/backend/internal/config"
 	"comp-video-service/backend/internal/handler"
@@ -55,10 +54,6 @@ func main() {
 	log.Println("s3 client ready")
 
 	adminRepo := repository.NewAdminRepository(db)
-	if err := ensureDefaultAdmin(ctx, adminRepo, cfg.DefaultAdminUsername, cfg.DefaultAdminPassword); err != nil {
-		log.Fatalf("bootstrap default admin: %v", err)
-	}
-	log.Printf("default admin ready: username=%s", cfg.DefaultAdminUsername)
 	studyRepo := repository.NewStudyRepository(db)
 	groupRepo := repository.NewGroupRepository(db)
 	sourceItemRepo := repository.NewSourceItemRepository(db)
@@ -176,12 +171,4 @@ func applyMigrations(migrationsPath, databaseURL string) error {
 		return err
 	}
 	return nil
-}
-
-func ensureDefaultAdmin(ctx context.Context, adminRepo *repository.AdminRepository, username, password string) error {
-	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-	if err != nil {
-		return err
-	}
-	return adminRepo.Upsert(ctx, username, string(hash))
 }
