@@ -6,6 +6,8 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
 :root {
+  --bp-mobile: 768px;
+
   /* Colors — neutral dark palette */
   --color-bg:          #111214;
   --color-surface:     #18191d;
@@ -213,6 +215,22 @@ a:hover { text-decoration: underline; }
   border-top-color: var(--color-primary);
   border-radius: 50%;
   animation: spin 0.7s linear infinite;
+}
+
+/* ---- Mobile utilities ---- */
+@media (max-width: 768px) {
+  .hide-mobile { display: none !important; }
+}
+@media (min-width: 769px) {
+  .hide-desktop { display: none !important; }
+}
+@media (max-width: 768px) {
+  body {
+    overflow-x: hidden;
+  }
+  .container {
+    padding: 0 var(--space-3);
+  }
 }
 
 /* ---- Badge ---- */

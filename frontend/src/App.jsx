@@ -2,7 +2,6 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { SessionProvider } from './context/SessionContext.jsx'
 import { ToastProvider } from './context/ToastContext.jsx'
 import AdminLayout from './components/AdminLayout.jsx'
-import MobileWarning from './components/MobileWarning.jsx'
 
 import WelcomePage      from './pages/WelcomePage.jsx'
 import InstructionsPage from './pages/InstructionsPage.jsx'
@@ -21,7 +20,6 @@ function App() {
     <ToastProvider>
     <SessionProvider>
       <BrowserRouter>
-        <MobileWarning />
         <Routes>
           {/* ── Participant flow ── */}
           <Route path="/"            element={<WelcomePage />} />

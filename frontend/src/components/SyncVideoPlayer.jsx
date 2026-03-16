@@ -1,4 +1,5 @@
 import { useRef, useEffect, useImperativeHandle, forwardRef, useState } from 'react'
+import { useWindowWidth } from '../hooks/useWindowWidth.js'
 
 /**
  * Synchronized dual-video player.
@@ -21,6 +22,7 @@ const SyncVideoPlayer = forwardRef(function SyncVideoPlayer(
   const [playing, setPlaying] = useState(false)
   const endedRef = useRef({ left: false, right: false })
 
+  const isMobile = useWindowWidth() <= 768
   const bothReady = leftReady && rightReady
 
   // Reset state when URLs change (new pair loaded)
@@ -92,7 +94,6 @@ const SyncVideoPlayer = forwardRef(function SyncVideoPlayer(
 
   const videoStyle = {
     width: '100%',
-    height: '100%',
     aspectRatio: '16/9',
     background: '#000',
     borderRadius: '8px',
@@ -110,12 +111,26 @@ const SyncVideoPlayer = forwardRef(function SyncVideoPlayer(
     borderRadius: '8px',
   }
 
+  const videosContainerStyle = isMobile
+    ? { display: 'flex', flexDirection: 'column', gap: '8px', width: '100%' }
+    : { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0px', flex: '1 1 auto', minHeight: 0 }
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%', height: '100%' }}>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0px', flex: '1 1 auto', minHeight: 0 }}>
+      <div style={videosContainerStyle}>
 
         {/* Left video */}
         <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+          <div style={{
+            textAlign: 'center',
+            color: 'var(--color-text)',
+            fontSize: '15px',
+            fontWeight: 700,
+            marginBottom: '4px',
+            display: isMobile ? 'block' : 'none',
+          }}>
+            Вариант A
+          </div>
           {!leftReady && (
             <div style={loadingOverlayStyle}>
               <div className="spinner" style={{ width: 28, height: 28 }} />
@@ -124,7 +139,7 @@ const SyncVideoPlayer = forwardRef(function SyncVideoPlayer(
           <video
             ref={leftRef}
             src={leftUrl}
-            style={{ ...videoStyle, objectPosition: 'right center' }}
+            style={{ ...videoStyle, objectPosition: isMobile ? 'center' : 'right center' }}
             preload="auto"
             playsInline
             controlsList="nodownload nofullscreen"
@@ -137,6 +152,16 @@ const SyncVideoPlayer = forwardRef(function SyncVideoPlayer(
 
         {/* Right video */}
         <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+          <div style={{
+            textAlign: 'center',
+            color: 'var(--color-text)',
+            fontSize: '15px',
+            fontWeight: 700,
+            marginBottom: '4px',
+            display: isMobile ? 'block' : 'none',
+          }}>
+            Вариант B
+          </div>
           {!rightReady && (
             <div style={loadingOverlayStyle}>
               <div className="spinner" style={{ width: 28, height: 28 }} />
@@ -145,7 +170,7 @@ const SyncVideoPlayer = forwardRef(function SyncVideoPlayer(
           <video
             ref={rightRef}
             src={rightUrl}
-            style={{ ...videoStyle, objectPosition: 'left center' }}
+            style={{ ...videoStyle, objectPosition: isMobile ? 'center' : 'left center' }}
             preload="auto"
             playsInline
             controlsList="nodownload nofullscreen"
@@ -160,18 +185,15 @@ const SyncVideoPlayer = forwardRef(function SyncVideoPlayer(
       {/* Labels + controls */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: '1fr auto 1fr',
+        gridTemplateColumns: isMobile ? '1fr' : '1fr auto 1fr',
         alignItems: 'center',
-        gap: '16px',
+        gap: '12px',
       }}>
-        <div style={{
-          textAlign: 'center',
-          color: 'var(--color-text)',
-          fontSize: '17px',
-          fontWeight: 700,
-        }}>
-          Вариант A
-        </div>
+        {!isMobile && (
+          <div style={{ textAlign: 'center', color: 'var(--color-text)', fontSize: '17px', fontWeight: 700 }}>
+            Вариант A
+          </div>
+        )}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px' }}>
           {!bothReady ? (
             <span style={{ color: 'var(--color-text-muted)', fontSize: '14px' }}>
@@ -182,28 +204,27 @@ const SyncVideoPlayer = forwardRef(function SyncVideoPlayer(
               <button
                 className="btn btn-ghost"
                 onClick={togglePlayPause}
-                style={{ width: '170px', justifyContent: 'center' }}
+                style={{ width: isMobile ? '100%' : '170px', justifyContent: 'center' }}
               >
                 {playing ? '⏸ Пауза' : '▶ Воспроизвести'}
               </button>
-              <button
-                className="btn btn-ghost"
-                onClick={replay}
-                title="Повторить (R)"
-              >
-                ↺ Повторить
-              </button>
+              {!isMobile && (
+                <button
+                  className="btn btn-ghost"
+                  onClick={replay}
+                  title="Повторить (R)"
+                >
+                  ↺ Повторить
+                </button>
+              )}
             </>
           )}
         </div>
-        <div style={{
-          textAlign: 'center',
-          color: 'var(--color-text)',
-          fontSize: '17px',
-          fontWeight: 700,
-        }}>
-          Вариант B
-        </div>
+        {!isMobile && (
+          <div style={{ textAlign: 'center', color: 'var(--color-text)', fontSize: '17px', fontWeight: 700 }}>
+            Вариант B
+          </div>
+        )}
       </div>
     </div>
   )

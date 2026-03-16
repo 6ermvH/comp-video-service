@@ -7,6 +7,7 @@ import ChoicePanel from '../components/ChoicePanel.jsx'
 import ReasonsSelector from '../components/ReasonsSelector.jsx'
 import ConfidenceRating from '../components/ConfidenceRating.jsx'
 import ProgressBar from '../components/ProgressBar.jsx'
+import { useWindowWidth } from '../hooks/useWindowWidth.js'
 
 // Show break page every N real tasks
 const BREAK_EVERY = 10
@@ -28,6 +29,7 @@ export default function TaskPage({ isPractice = false }) {
 
   const playerRef    = useRef(null)
   const taskCountRef = useRef(0)
+  const isMobile = useWindowWidth() <= 768
 
   // Guard: no session → back to welcome
   useEffect(() => {
@@ -159,12 +161,17 @@ export default function TaskPage({ isPractice = false }) {
     }}>
 
       {/* Synchronized video player */}
-      <div style={{
+      <div style={isMobile ? {
+        width: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+      } : {
         width: 'calc(100vw - 8px)',
         maxWidth: 'none',
         marginLeft: 'calc(50% - 50vw + 4px)',
         marginRight: 'calc(50% - 50vw + 4px)',
         display: 'flex',
+        flexDirection: 'column',
       }}>
         <SyncVideoPlayer
           ref={playerRef}
@@ -173,6 +180,15 @@ export default function TaskPage({ isPractice = false }) {
           onReplay={handleReplay}
           onEnded={() => { /* tracking hook */ }}
         />
+        {isMobile && (
+          <button
+            className="btn btn-ghost"
+            style={{ width: '100%', marginTop: '8px' }}
+            onClick={handleReplay}
+          >
+            ↺ Повторить оба видео
+          </button>
+        )}
       </div>
 
       {/* Response panel */}
