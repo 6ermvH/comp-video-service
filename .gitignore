@@ -13,6 +13,7 @@ backend/vendor/
 *.dylib
 *.test
 *.out
+*.cover
 go.work
 go.work.sum
 
@@ -60,3 +61,4 @@ tasks_agent3_backend.md
 close_up_selfie_pairs.csv
 fix_plan.md
 walkthrough.md
+
