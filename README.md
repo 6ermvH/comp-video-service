@@ -29,12 +29,6 @@ cp .env.example .env
 JWT_SECRET=ваш_случайный_секрет_минимум_32_символа
 ```
 
-По умолчанию локальный администратор создаётся автоматически:
-```
-DEFAULT_ADMIN_USERNAME=admin
-DEFAULT_ADMIN_PASSWORD=admin_123_videogen
-```
-
 ### 2. Запустить все сервисы
 
 ```bash
@@ -43,9 +37,16 @@ docker compose up -d --build
 
 Сервисы поднимаются в порядке: PostgreSQL → MinIO → Backend → Frontend.
 Миграции применяются автоматически при старте backend.
-Администратор `admin` / `admin_123_videogen` создаётся или обновляется автоматически при старте backend.
 
-### 3. Открыть в браузере
+### 3. Создать первого администратора
+
+```bash
+docker compose exec backend ./seed
+```
+
+По умолчанию создаёт пользователя `admin` / `admin123`.
+
+### 4. Открыть в браузере
 
 | URL | Назначение |
 |---|---|
@@ -232,8 +233,6 @@ comp-video-service/
 | `S3_PUBLIC_URL` | `http://localhost:9000` | Публичный URL MinIO (видит браузер) |
 | `BACKEND_PORT` | `8080` | Порт backend |
 | `JWT_SECRET` | — | Секрет для JWT (обязательно сменить!) |
-| `DEFAULT_ADMIN_USERNAME` | `admin` | Логин администратора для локального запуска |
-| `DEFAULT_ADMIN_PASSWORD` | `admin_123_videogen` | Пароль администратора для локального запуска |
 | `CORS_ORIGINS` | `http://localhost:5173` | Разрешённые origins |
 
 ---
