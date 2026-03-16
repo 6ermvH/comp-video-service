@@ -14,6 +14,10 @@ type Config struct {
 	// PostgreSQL
 	DatabaseURL string
 
+	// Default admin bootstrap
+	DefaultAdminUsername string
+	DefaultAdminPassword string
+
 	// S3 / MinIO
 	S3Endpoint        string
 	S3Region          string
@@ -36,18 +40,20 @@ type Config struct {
 // Load reads configuration from environment variables.
 func Load() (*Config, error) {
 	cfg := &Config{
-		Port:              getenv("PORT", "8080"),
-		DatabaseURL:       getenv("DATABASE_URL", "postgres://cvs:cvs_secret@localhost:5432/compvideo"),
-		S3Endpoint:        getenv("S3_ENDPOINT", "http://minio:9000"),
-		S3Region:          getenv("S3_REGION", "us-east-1"),
-		S3Bucket:          getenv("S3_BUCKET", "videos"),
-		S3AccessKeyID:     getenv("MINIO_ROOT_USER", "minioadmin"),
-		S3SecretAccessKey: getenv("MINIO_ROOT_PASSWORD", "minioadmin"),
-		S3PublicURL:       getenv("S3_PUBLIC_URL", "http://localhost:9000"),
-		S3UsePathStyle:    getenv("S3_USE_PATH_STYLE", "true") == "true",
-		JWTSecret:         getenv("JWT_SECRET", ""),
-		CORSOrigins:       splitComma(getenv("CORS_ORIGINS", "http://localhost:5173")),
-		MigrationsPath:    getenv("MIGRATIONS_PATH", "file://migrations"),
+		Port:                 getenv("PORT", "8080"),
+		DatabaseURL:          getenv("DATABASE_URL", "postgres://cvs:cvs_secret@localhost:5432/compvideo"),
+		DefaultAdminUsername: getenv("DEFAULT_ADMIN_USERNAME", "admin"),
+		DefaultAdminPassword: getenv("DEFAULT_ADMIN_PASSWORD", "admin_123_videogen"),
+		S3Endpoint:           getenv("S3_ENDPOINT", "http://minio:9000"),
+		S3Region:             getenv("S3_REGION", "us-east-1"),
+		S3Bucket:             getenv("S3_BUCKET", "videos"),
+		S3AccessKeyID:        getenv("MINIO_ROOT_USER", "minioadmin"),
+		S3SecretAccessKey:    getenv("MINIO_ROOT_PASSWORD", "minioadmin"),
+		S3PublicURL:          getenv("S3_PUBLIC_URL", "http://localhost:9000"),
+		S3UsePathStyle:       getenv("S3_USE_PATH_STYLE", "true") == "true",
+		JWTSecret:            getenv("JWT_SECRET", ""),
+		CORSOrigins:          splitComma(getenv("CORS_ORIGINS", "http://localhost:5173")),
+		MigrationsPath:       getenv("MIGRATIONS_PATH", "file://migrations"),
 	}
 
 	if cfg.JWTSecret == "" {

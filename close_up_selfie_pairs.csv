@@ -1,0 +1,6 @@
+group_id,source_image_id,pair_code,difficulty,is_attention_check,notes,baseline_s3_key,candidate_s3_key
+458492a9-cb65-4bb6-8bf0-aaf78df29d24,01_image,close_up_selfie_01,medium,false,"image: 01_image.jpg; baseline: 01_video_baseline.mp4; candidate: 01_video_distilled.mp4",,
+458492a9-cb65-4bb6-8bf0-aaf78df29d24,02_image,close_up_selfie_02,medium,false,"image: 02_image.jpg; baseline: 02_video_baseline.mp4; candidate: 02_video_distilled.mp4",,
+458492a9-cb65-4bb6-8bf0-aaf78df29d24,03_image,close_up_selfie_03,medium,false,"image: 03_image.jpg; baseline: 03_video_baseline.mp4; candidate: 03_video_distilled.mp4",,
+458492a9-cb65-4bb6-8bf0-aaf78df29d24,04_image,close_up_selfie_04,medium,false,"image: 04_image.jpg; baseline: 04_video_baseline.mp4; candidate: 04_video_distilled.mp4",,
+458492a9-cb65-4bb6-8bf0-aaf78df29d24,05_image,close_up_selfie_05,medium,false,"image: 05_image.jpg; baseline: 05_video_baseline.mp4; candidate: 05_video_distilled.mp4",,
