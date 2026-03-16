@@ -5,6 +5,7 @@ import (
 	"errors"
 	"strings"
 	"testing"
+	"time"
 
 	"go.uber.org/mock/gomock"
 )
@@ -24,10 +25,20 @@ func TestExportServiceExportCSVSuccess(t *testing.T) {
 			gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
 			gomock.Any(), gomock.Any(),
 		).DoAndReturn(func(dest ...any) error {
-			vals := []string{"r1", "p1", "tok", "s1", "pp1", "si1", "0", "left", "speed|quality", "5", "1234", "1", "true", "2026-03-15T00:00:00Z"}
-			for i := range vals {
-				*(dest[i].(*string)) = vals[i]
-			}
+			*(dest[0].(*string)) = "r1"
+			*(dest[1].(*string)) = "p1"
+			*(dest[2].(*string)) = "tok"
+			*(dest[3].(*string)) = "s1"
+			*(dest[4].(*string)) = "pp1"
+			*(dest[5].(*string)) = "si1"
+			*(dest[6].(*int)) = 0
+			*(dest[7].(*string)) = "left"
+			*(dest[8].(*string)) = "speed|quality"
+			*(dest[9].(*string)) = "5"
+			*(dest[10].(*string)) = "1234"
+			*(dest[11].(*int)) = 1
+			*(dest[12].(*bool)) = true
+			*(dest[13].(*time.Time)) = time.Date(2026, 3, 15, 0, 0, 0, 0, time.UTC)
 			return nil
 		}),
 		rows.EXPECT().Next().Return(false),
@@ -118,10 +129,20 @@ func TestExportServiceExportJSON(t *testing.T) {
 			gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
 			gomock.Any(), gomock.Any(),
 		).DoAndReturn(func(dest ...any) error {
-			vals := []string{"r2", "p2", "tok2", "s2", "pp2", "si2", "1", "right", "", "", "", "0", "false", "2026-03-15T00:00:00Z"}
-			for i := range vals {
-				*(dest[i].(*string)) = vals[i]
-			}
+			*(dest[0].(*string)) = "r2"
+			*(dest[1].(*string)) = "p2"
+			*(dest[2].(*string)) = "tok2"
+			*(dest[3].(*string)) = "s2"
+			*(dest[4].(*string)) = "pp2"
+			*(dest[5].(*string)) = "si2"
+			*(dest[6].(*int)) = 1
+			*(dest[7].(*string)) = "right"
+			*(dest[8].(*string)) = ""
+			*(dest[9].(*string)) = ""
+			*(dest[10].(*string)) = ""
+			*(dest[11].(*int)) = 0
+			*(dest[12].(*bool)) = false
+			*(dest[13].(*time.Time)) = time.Date(2026, 3, 15, 0, 0, 0, 0, time.UTC)
 			return nil
 		}),
 		rows.EXPECT().Next().Return(false),
