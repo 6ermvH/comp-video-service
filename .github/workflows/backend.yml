@@ -41,7 +41,7 @@ jobs:
           working-directory: backend
 
       - name: Test
-        run: go test ./... -race -count=1 -coverprofile=coverage.out
+        run: go test ./... -race -count=1 -coverprofile=coverage.out -coverpkg=comp-video-service/backend/internal/service,comp-video-service/backend/internal/handler
 
       - name: Check coverage
         run: |
