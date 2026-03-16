@@ -51,3 +51,9 @@ Thumbs.db
 # ───────── Test artifacts ─────────
 coverage.out
 coverage.html
+
+implementation_plan.md
+sample_pairs.csv
+task description.pdf
+tasks_agent2_frontend.md
+tasks_agent3_backend.md
