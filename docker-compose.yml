@@ -88,6 +88,25 @@ services:
       timeout: 5s
       retries: 5
 
+  # Создание первого администратора. Запустить один раз:
+  #   SEED_USERNAME=admin SEED_PASSWORD=yourpassword docker compose run --rm seed
+  # или задать SEED_USERNAME / SEED_PASSWORD в .env и раскомментировать блок ниже,
+  # затем: docker compose run --rm seed
+  #
+  # seed:
+  #   build:
+  #     context: ./backend
+  #     dockerfile: Dockerfile
+  #   container_name: cvs_seed
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #   environment:
+  #     DATABASE_URL: postgres://${POSTGRES_USER:-cvs}:${POSTGRES_PASSWORD:-cvs_secret}@postgres:5432/${POSTGRES_DB:-compvideo}?sslmode=disable
+  #     SEED_USERNAME: ${SEED_USERNAME:-admin}
+  #     SEED_PASSWORD: ${SEED_PASSWORD}
+  #   entrypoint: ["./seed"]
+
   frontend:
     build:
       context: ./frontend
