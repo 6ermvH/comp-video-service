@@ -1217,6 +1217,12 @@
         "service.AnalyticsOverview": {
             "type": "object",
             "properties": {
+                "candidate_win_rate": {
+                    "type": "number"
+                },
+                "completion_rate": {
+                    "type": "number"
+                },
                 "effects": {
                     "type": "array",
                     "items": {
@@ -1237,12 +1243,18 @@
                 },
                 "total_responses": {
                     "type": "integer"
+                },
+                "total_source_items": {
+                    "type": "integer"
                 }
             }
         },
         "service.EffectAnalytics": {
             "type": "object",
             "properties": {
+                "candidate_win_rate": {
+                    "type": "number"
+                },
                 "effect_type": {
                     "type": "string"
                 },
