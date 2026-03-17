@@ -37,7 +37,7 @@ func TestExportServiceExportCSVSuccess(t *testing.T) {
 			*(dest[9].(*string)) = "5"
 			*(dest[10].(*string)) = "1234"
 			*(dest[11].(*int)) = 1
-			*(dest[12].(*bool)) = true
+			*(dest[12].(*string)) = "true"
 			*(dest[13].(*time.Time)) = time.Date(2026, 3, 15, 0, 0, 0, 0, time.UTC)
 			return nil
 		}),
@@ -141,7 +141,7 @@ func TestExportServiceExportJSON(t *testing.T) {
 			*(dest[9].(*string)) = ""
 			*(dest[10].(*string)) = ""
 			*(dest[11].(*int)) = 0
-			*(dest[12].(*bool)) = false
+			*(dest[12].(*string)) = "false"
 			*(dest[13].(*time.Time)) = time.Date(2026, 3, 15, 0, 0, 0, 0, time.UTC)
 			return nil
 		}),
