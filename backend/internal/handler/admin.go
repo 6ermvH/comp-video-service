@@ -32,6 +32,7 @@ type assetService interface {
 type analyticsService interface {
 	Overview(ctx context.Context) (*service.AnalyticsOverview, error)
 	StudyDetail(ctx context.Context, studyID uuid.UUID) (*service.StudyAnalytics, error)
+	PairBreakdown(ctx context.Context, studyID uuid.UUID) ([]*service.PairStat, error)
 }
 
 type qcService interface {
@@ -380,6 +381,22 @@ func (h *AdminHandler) AnalyticsStudy(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, detail)
+}
+
+// AnalyticsPairs godoc
+// GET /api/admin/analytics/study/:id/pairs
+func (h *AdminHandler) AnalyticsPairs(c *gin.Context) {
+	studyID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid study id"})
+		return
+	}
+	pairs, err := h.analyticsSvc.PairBreakdown(c.Request.Context(), studyID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, pairs)
 }
 
 // AnalyticsQC godoc
