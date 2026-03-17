@@ -234,6 +234,20 @@ func (m *MockstudyVideoRepository) EXPECT() *MockstudyVideoRepositoryMockRecorde
 	return m.recorder
 }
 
+// Link mocks base method.
+func (m *MockstudyVideoRepository) Link(ctx context.Context, videoID, sourceItemID uuid.UUID, methodType string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Link", ctx, videoID, sourceItemID, methodType)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Link indicates an expected call of Link.
+func (mr *MockstudyVideoRepositoryMockRecorder) Link(ctx, videoID, sourceItemID, methodType any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Link", reflect.TypeOf((*MockstudyVideoRepository)(nil).Link), ctx, videoID, sourceItemID, methodType)
+}
+
 // LinkOrCreate mocks base method.
 func (m *MockstudyVideoRepository) LinkOrCreate(ctx context.Context, v *model.Video) (*model.Video, error) {
 	m.ctrl.T.Helper()
@@ -247,4 +261,19 @@ func (m *MockstudyVideoRepository) LinkOrCreate(ctx context.Context, v *model.Vi
 func (mr *MockstudyVideoRepositoryMockRecorder) LinkOrCreate(ctx, v any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LinkOrCreate", reflect.TypeOf((*MockstudyVideoRepository)(nil).LinkOrCreate), ctx, v)
+}
+
+// ListAll mocks base method.
+func (m *MockstudyVideoRepository) ListAll(ctx context.Context) ([]*model.Video, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListAll", ctx)
+	ret0, _ := ret[0].([]*model.Video)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListAll indicates an expected call of ListAll.
+func (mr *MockstudyVideoRepositoryMockRecorder) ListAll(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListAll", reflect.TypeOf((*MockstudyVideoRepository)(nil).ListAll), ctx)
 }

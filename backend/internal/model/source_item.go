@@ -18,3 +18,14 @@ type SourceItem struct {
 	Notes            *string   `json:"notes,omitempty"`
 	CreatedAt        time.Time `json:"created_at"`
 }
+
+// CreatePairRequest creates a source item and links two existing video assets.
+type CreatePairRequest struct {
+	GroupID          uuid.UUID `json:"group_id" binding:"required"`
+	BaselineVideoID  uuid.UUID `json:"baseline_video_id" binding:"required"`
+	CandidateVideoID uuid.UUID `json:"candidate_video_id" binding:"required"`
+	PairCode         string    `json:"pair_code"`
+	Difficulty       string    `json:"difficulty"`
+	Notes            string    `json:"notes"`
+	IsAttentionCheck bool      `json:"is_attention_check"`
+}

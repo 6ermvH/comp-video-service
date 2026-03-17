@@ -39,6 +39,8 @@ type sourceItemRepository interface {
 
 type studyVideoRepository interface {
 	LinkOrCreate(ctx context.Context, v *model.Video) (*model.Video, error)
+	Link(ctx context.Context, videoID uuid.UUID, sourceItemID uuid.UUID, methodType string) error
+	ListAll(ctx context.Context) ([]*model.Video, error)
 }
 
 //go:generate go run go.uber.org/mock/mockgen -source=study.go -destination=study_mocks_test.go -package=service
@@ -98,6 +100,31 @@ func (s *StudyService) ListGroups(ctx context.Context, studyID uuid.UUID) ([]*mo
 
 func (s *StudyService) ListSourceItems(ctx context.Context, studyID *uuid.UUID, groupID *uuid.UUID) ([]*model.SourceItem, error) {
 	return s.sourceItemRepo.ListWithFilters(ctx, studyID, groupID)
+}
+
+func (s *StudyService) ListAssets(ctx context.Context) ([]*model.Video, error) {
+	return s.videoRepo.ListAll(ctx)
+}
+
+func (s *StudyService) CreatePair(ctx context.Context, studyID uuid.UUID, req *model.CreatePairRequest) (*model.SourceItem, error) {
+	item, err := s.sourceItemRepo.Create(ctx, &model.SourceItem{
+		StudyID:          studyID,
+		GroupID:          req.GroupID,
+		PairCode:         nilIfEmpty(req.PairCode),
+		Difficulty:       nilIfEmpty(req.Difficulty),
+		Notes:            nilIfEmpty(req.Notes),
+		IsAttentionCheck: req.IsAttentionCheck,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("create source item: %w", err)
+	}
+	if err := s.videoRepo.Link(ctx, req.BaselineVideoID, item.ID, "baseline"); err != nil {
+		return nil, fmt.Errorf("link baseline: %w", err)
+	}
+	if err := s.videoRepo.Link(ctx, req.CandidateVideoID, item.ID, "candidate"); err != nil {
+		return nil, fmt.Errorf("link candidate: %w", err)
+	}
+	return item, nil
 }
 
 // ImportSourceItemsCSV imports source-items with optional asset keys.

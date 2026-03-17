@@ -27,6 +27,8 @@ type mockStudyService struct {
 	createGroupFn     func(context.Context, uuid.UUID, *model.CreateGroupRequest) (*model.Group, error)
 	importCSVFn       func(context.Context, uuid.UUID, io.Reader) (int, error)
 	listSourceItemsFn func(context.Context, *uuid.UUID, *uuid.UUID) ([]*model.SourceItem, error)
+	listAssetsFn      func(context.Context) ([]*model.Video, error)
+	createPairFn      func(context.Context, uuid.UUID, *model.CreatePairRequest) (*model.SourceItem, error)
 }
 
 func (m *mockStudyService) ListStudies(ctx context.Context) ([]*model.Study, error) {
@@ -49,6 +51,12 @@ func (m *mockStudyService) ImportSourceItemsCSV(ctx context.Context, id uuid.UUI
 }
 func (m *mockStudyService) ListSourceItems(ctx context.Context, sid *uuid.UUID, gid *uuid.UUID) ([]*model.SourceItem, error) {
 	return m.listSourceItemsFn(ctx, sid, gid)
+}
+func (m *mockStudyService) ListAssets(ctx context.Context) ([]*model.Video, error) {
+	return m.listAssetsFn(ctx)
+}
+func (m *mockStudyService) CreatePair(ctx context.Context, id uuid.UUID, req *model.CreatePairRequest) (*model.SourceItem, error) {
+	return m.createPairFn(ctx, id, req)
 }
 
 type mockAssetService struct {

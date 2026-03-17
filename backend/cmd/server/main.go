@@ -132,6 +132,8 @@ func main() {
 		adminGroup.POST("/studies/:id/import", adminH.ImportSourceItems)
 		adminGroup.POST("/assets/upload", adminH.UploadAsset)
 		adminGroup.GET("/source-items", adminH.ListSourceItems)
+		adminGroup.GET("/assets", adminH.ListAssets)
+		adminGroup.POST("/studies/:id/pairs", adminH.CreatePair)
 
 		adminGroup.GET("/analytics/overview", adminH.AnalyticsOverview)
 		adminGroup.GET("/analytics/study/:id", adminH.AnalyticsStudy)

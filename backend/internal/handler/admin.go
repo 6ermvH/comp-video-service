@@ -23,6 +23,8 @@ type studyService interface {
 	CreateGroup(ctx context.Context, studyID uuid.UUID, req *model.CreateGroupRequest) (*model.Group, error)
 	ImportSourceItemsCSV(ctx context.Context, studyID uuid.UUID, r io.Reader) (int, error)
 	ListSourceItems(ctx context.Context, studyID *uuid.UUID, groupID *uuid.UUID) ([]*model.SourceItem, error)
+	ListAssets(ctx context.Context) ([]*model.Video, error)
+	CreatePair(ctx context.Context, studyID uuid.UUID, req *model.CreatePairRequest) (*model.SourceItem, error)
 }
 
 type assetService interface {
@@ -341,6 +343,58 @@ func (h *AdminHandler) ListSourceItems(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"source_items": items})
+}
+
+// ListAssets godoc
+// @Summary      List all video assets
+// @Tags         admin
+// @Produce      json
+// @Security     BearerAuth
+// @Success      200  {object}  map[string]interface{}
+// @Failure      500  {object}  map[string]string
+// @Router       /admin/assets [get]
+func (h *AdminHandler) ListAssets(c *gin.Context) {
+	assets, err := h.studySvc.ListAssets(c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	if assets == nil {
+		assets = make([]*model.Video, 0)
+	}
+	c.JSON(http.StatusOK, gin.H{"assets": assets})
+}
+
+// CreatePair godoc
+// @Summary      Create a source item pair from two existing video assets
+// @Tags         admin
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Security     CSRFToken
+// @Param        id    path      string                   true  "Study ID"
+// @Param        body  body      model.CreatePairRequest  true  "Pair payload"
+// @Success      201   {object}  model.SourceItem
+// @Failure      400   {object}  map[string]string
+// @Failure      500   {object}  map[string]string
+// @Router       /admin/studies/{id}/pairs [post]
+func (h *AdminHandler) CreatePair(c *gin.Context) {
+	studyID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid study id"})
+		return
+	}
+	var req model.CreatePairRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	item, err := h.studySvc.CreatePair(c.Request.Context(), studyID, &req)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusCreated, item)
 }
 
 // AnalyticsOverview godoc

@@ -153,6 +153,40 @@
                 }
             }
         },
+        "/admin/assets": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "List all video assets",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/admin/assets/upload": {
             "post": {
                 "security": [
@@ -672,6 +706,72 @@
                 }
             }
         },
+        "/admin/studies/{id}/pairs": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    },
+                    {
+                        "CSRFToken": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Create a source item pair from two existing video assets",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Study ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Pair payload",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.CreatePairRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/model.SourceItem"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/session/start": {
             "post": {
                 "consumes": [
@@ -945,6 +1045,37 @@
                 }
             }
         },
+        "model.CreatePairRequest": {
+            "type": "object",
+            "required": [
+                "baseline_video_id",
+                "candidate_video_id",
+                "group_id"
+            ],
+            "properties": {
+                "baseline_video_id": {
+                    "type": "string"
+                },
+                "candidate_video_id": {
+                    "type": "string"
+                },
+                "difficulty": {
+                    "type": "string"
+                },
+                "group_id": {
+                    "type": "string"
+                },
+                "is_attention_check": {
+                    "type": "boolean"
+                },
+                "notes": {
+                    "type": "string"
+                },
+                "pair_code": {
+                    "type": "string"
+                }
+            }
+        },
         "model.CreateStudyRequest": {
             "type": "object",
             "required": [
@@ -1062,6 +1193,38 @@
                 },
                 "response_time_ms": {
                     "type": "integer"
+                }
+            }
+        },
+        "model.SourceItem": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "difficulty": {
+                    "type": "string"
+                },
+                "group_id": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_attention_check": {
+                    "type": "boolean"
+                },
+                "notes": {
+                    "type": "string"
+                },
+                "pair_code": {
+                    "type": "string"
+                },
+                "source_image_id": {
+                    "type": "string"
+                },
+                "study_id": {
+                    "type": "string"
                 }
             }
         },
