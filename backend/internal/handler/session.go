@@ -28,7 +28,15 @@ func NewSessionHandler(sessionSvc sessionService) *SessionHandler {
 }
 
 // Start godoc
-// POST /api/session/start
+// @Summary      Start participant session
+// @Tags         session
+// @Accept       json
+// @Produce      json
+// @Param        body  body      model.StartSessionRequest  true  "Session data"
+// @Success      200   {object}  service.SessionStartResult
+// @Failure      400   {object}  map[string]string
+// @Failure      404   {object}  map[string]string
+// @Router       /session/start [post]
 func (h *SessionHandler) Start(c *gin.Context) {
 	var req model.StartSessionRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -45,7 +53,14 @@ func (h *SessionHandler) Start(c *gin.Context) {
 }
 
 // NextTask godoc
-// GET /api/session/:token/next-task
+// @Summary      Get next task for session
+// @Tags         session
+// @Produce      json
+// @Param        token  path      string            true  "Session token"
+// @Success      200    {object}  model.TaskPayload
+// @Success      204    "No more tasks"
+// @Failure      404    {object}  map[string]string
+// @Router       /session/{token}/next-task [get]
 func (h *SessionHandler) NextTask(c *gin.Context) {
 	token := c.Param("token")
 	if token == "" {
@@ -66,7 +81,13 @@ func (h *SessionHandler) NextTask(c *gin.Context) {
 }
 
 // Complete godoc
-// POST /api/session/:token/complete
+// @Summary      Complete participant session
+// @Tags         session
+// @Produce      json
+// @Param        token  path      string                         true  "Session token"
+// @Success      200    {object}  service.SessionCompleteResult
+// @Failure      404    {object}  map[string]string
+// @Router       /session/{token}/complete [post]
 func (h *SessionHandler) Complete(c *gin.Context) {
 	result, err := h.sessionSvc.Complete(c.Request.Context(), c.Param("token"))
 	if err != nil {

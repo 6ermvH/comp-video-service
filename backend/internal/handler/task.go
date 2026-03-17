@@ -40,7 +40,16 @@ func NewTaskHandler(
 }
 
 // SubmitResponse godoc
-// POST /api/task/:id/response
+// @Summary      Submit response for a task
+// @Tags         task
+// @Accept       json
+// @Produce      json
+// @Param        id    path      string                     true  "Pair presentation ID"
+// @Param        body  body      model.TaskResponseRequest  true  "Response data"
+// @Success      201   {object}  model.Response
+// @Failure      400   {object}  map[string]string
+// @Failure      409   {object}  map[string]string
+// @Router       /task/{id}/response [post]
 func (h *TaskHandler) SubmitResponse(c *gin.Context) {
 	taskID, err := uuid.Parse(c.Param("id"))
 	if err != nil {
@@ -67,7 +76,15 @@ func (h *TaskHandler) SubmitResponse(c *gin.Context) {
 }
 
 // LogEvent godoc
-// POST /api/task/:id/event
+// @Summary      Log interaction event
+// @Tags         task
+// @Accept       json
+// @Produce      json
+// @Param        id    path      string                  true  "Pair presentation ID"
+// @Param        body  body      map[string]interface{}  true  "Event data"
+// @Success      201   {object}  map[string]interface{}
+// @Failure      400   {object}  map[string]string
+// @Router       /task/{id}/event [post]
 func (h *TaskHandler) LogEvent(c *gin.Context) {
 	taskID, err := uuid.Parse(c.Param("id"))
 	if err != nil {

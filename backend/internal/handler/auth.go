@@ -30,7 +30,15 @@ func NewAuthHandler(adminRepo adminAuthRepository, jwtSecret string) *AuthHandle
 }
 
 // Login godoc
-// POST /api/admin/login
+// @Summary      Admin login
+// @Tags         auth
+// @Accept       json
+// @Produce      json
+// @Param        body  body      model.LoginRequest   true  "Credentials"
+// @Success      200   {object}  model.LoginResponse
+// @Failure      400   {object}  map[string]string
+// @Failure      401   {object}  map[string]string
+// @Router       /admin/login [post]
 func (h *AuthHandler) Login(c *gin.Context) {
 	var req model.LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
