@@ -61,6 +61,15 @@ func (r *VideoRepository) LinkOrCreate(ctx context.Context, v *model.Video) (*mo
 	return scanVideo(row)
 }
 
+// Link sets source_item_id and method_type on an existing video asset.
+func (r *VideoRepository) Link(ctx context.Context, videoID uuid.UUID, sourceItemID uuid.UUID, methodType string) error {
+	_, err := r.db.Exec(ctx,
+		`UPDATE video_assets SET source_item_id = $2, method_type = $3, updated_at = now() WHERE id = $1`,
+		videoID, sourceItemID, methodType,
+	)
+	return err
+}
+
 // GetByID returns a video asset by UUID.
 func (r *VideoRepository) GetByID(ctx context.Context, id uuid.UUID) (*model.Video, error) {
 	q := `
@@ -105,6 +114,30 @@ func (r *VideoRepository) ListActive(ctx context.Context) ([]*model.Video, error
 	rows, err := r.db.Query(ctx, q)
 	if err != nil {
 		return nil, fmt.Errorf("list active videos: %w", err)
+	}
+	defer rows.Close()
+
+	var out []*model.Video
+	for rows.Next() {
+		v, err := scanVideo(rows)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, v)
+	}
+	return out, rows.Err()
+}
+
+// ListAll returns all video assets ordered by creation date desc.
+func (r *VideoRepository) ListAll(ctx context.Context) ([]*model.Video, error) {
+	q := `
+		SELECT id, source_item_id, method_type, title, description, s3_key, duration_ms,
+			status, width, height, fps, codec, checksum, created_at, updated_at
+		FROM video_assets
+		ORDER BY created_at DESC`
+	rows, err := r.db.Query(ctx, q)
+	if err != nil {
+		return nil, fmt.Errorf("list all videos: %w", err)
 	}
 	defer rows.Close()
 

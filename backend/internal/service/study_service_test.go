@@ -18,7 +18,8 @@ func TestStudyServiceBasicMethodsWithGomock(t *testing.T) {
 	studyRepo := NewMockstudyRepository(ctrl)
 	groupRepo := NewMockgroupRepository(ctrl)
 	sourceRepo := NewMocksourceItemRepository(ctrl)
-	svc := NewStudyService(studyRepo, groupRepo, sourceRepo, nil)
+	videoRepo := NewMockstudyVideoRepository(ctrl)
+	svc := NewStudyService(studyRepo, groupRepo, sourceRepo, videoRepo)
 
 	studyRepo.EXPECT().List(gomock.Any()).Return([]*model.Study{{ID: uuid.New()}}, nil)
 	if _, err := svc.ListStudies(context.Background()); err != nil {
@@ -44,6 +45,27 @@ func TestStudyServiceBasicMethodsWithGomock(t *testing.T) {
 	sourceRepo.EXPECT().ListWithFilters(gomock.Any(), gomock.Nil(), gomock.Nil()).Return([]*model.SourceItem{}, nil)
 	if _, err := svc.ListSourceItems(context.Background(), nil, nil); err != nil {
 		t.Fatalf("ListSourceItems: %v", err)
+	}
+
+	videoRepo.EXPECT().ListAll(gomock.Any()).Return([]*model.Video{}, nil)
+	if _, err := svc.ListAssets(context.Background()); err != nil {
+		t.Fatalf("ListAssets: %v", err)
+	}
+
+	studyID := uuid.New()
+	groupID2 := uuid.New()
+	baselineID := uuid.New()
+	candidateID := uuid.New()
+	createdItem := &model.SourceItem{ID: uuid.New(), StudyID: studyID, GroupID: groupID2}
+	sourceRepo.EXPECT().Create(gomock.Any(), gomock.Any()).Return(createdItem, nil)
+	videoRepo.EXPECT().Link(gomock.Any(), baselineID, createdItem.ID, "baseline").Return(nil)
+	videoRepo.EXPECT().Link(gomock.Any(), candidateID, createdItem.ID, "candidate").Return(nil)
+	if _, err := svc.CreatePair(context.Background(), studyID, &model.CreatePairRequest{
+		GroupID:          groupID2,
+		BaselineVideoID:  baselineID,
+		CandidateVideoID: candidateID,
+	}); err != nil {
+		t.Fatalf("CreatePair: %v", err)
 	}
 }
 

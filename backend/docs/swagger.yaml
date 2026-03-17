@@ -22,6 +22,27 @@ definitions:
     required:
     - name
     type: object
+  model.CreatePairRequest:
+    properties:
+      baseline_video_id:
+        type: string
+      candidate_video_id:
+        type: string
+      difficulty:
+        type: string
+      group_id:
+        type: string
+      is_attention_check:
+        type: boolean
+      notes:
+        type: string
+      pair_code:
+        type: string
+    required:
+    - baseline_video_id
+    - candidate_video_id
+    - group_id
+    type: object
   model.CreateStudyRequest:
     properties:
       confidence_enabled:
@@ -100,6 +121,27 @@ definitions:
         type: integer
       response_time_ms:
         type: integer
+    type: object
+  model.SourceItem:
+    properties:
+      created_at:
+        type: string
+      difficulty:
+        type: string
+      group_id:
+        type: string
+      id:
+        type: string
+      is_attention_check:
+        type: boolean
+      notes:
+        type: string
+      pair_code:
+        type: string
+      source_image_id:
+        type: string
+      study_id:
+        type: string
     type: object
   model.StartSessionRequest:
     properties:
@@ -463,6 +505,27 @@ paths:
       summary: Get per-pair analytics for a study
       tags:
       - admin
+  /admin/assets:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: List all video assets
+      tags:
+      - admin
   /admin/assets/upload:
     post:
       consumes:
@@ -778,6 +841,47 @@ paths:
       - BearerAuth: []
       - CSRFToken: []
       summary: Import source items from CSV
+      tags:
+      - admin
+  /admin/studies/{id}/pairs:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Study ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Pair payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/model.CreatePairRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.SourceItem'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      - CSRFToken: []
+      summary: Create a source item pair from two existing video assets
       tags:
       - admin
   /session/{token}/complete:
