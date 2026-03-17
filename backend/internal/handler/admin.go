@@ -70,7 +70,13 @@ func NewAdminHandler(
 }
 
 // ListStudies godoc
-// GET /api/admin/studies
+// @Summary      List all studies
+// @Tags         admin
+// @Produce      json
+// @Security     BearerAuth
+// @Security     CSRFToken
+// @Success      200  {object}  map[string]interface{}
+// @Router       /admin/studies [get]
 func (h *AdminHandler) ListStudies(c *gin.Context) {
 	studies, err := h.studySvc.ListStudies(c.Request.Context())
 	if err != nil {
@@ -84,7 +90,16 @@ func (h *AdminHandler) ListStudies(c *gin.Context) {
 }
 
 // CreateStudy godoc
-// POST /api/admin/studies
+// @Summary      Create a new study
+// @Tags         admin
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Security     CSRFToken
+// @Param        body  body      model.CreateStudyRequest  true  "Study data"
+// @Success      201   {object}  model.Study
+// @Failure      400   {object}  map[string]string
+// @Router       /admin/studies [post]
 func (h *AdminHandler) CreateStudy(c *gin.Context) {
 	var req model.CreateStudyRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -100,7 +115,17 @@ func (h *AdminHandler) CreateStudy(c *gin.Context) {
 }
 
 // PatchStudyStatus godoc
-// PATCH /api/admin/studies/:id
+// @Summary      Update study status
+// @Tags         admin
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Security     CSRFToken
+// @Param        id    path      string                          true  "Study ID"
+// @Param        body  body      model.UpdateStudyStatusRequest  true  "Status update"
+// @Success      200   {object}  model.Study
+// @Failure      400   {object}  map[string]string
+// @Router       /admin/studies/{id} [patch]
 func (h *AdminHandler) PatchStudyStatus(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
@@ -121,7 +146,17 @@ func (h *AdminHandler) PatchStudyStatus(c *gin.Context) {
 }
 
 // CreateGroup godoc
-// POST /api/admin/studies/:id/groups
+// @Summary      Create a group within a study
+// @Tags         admin
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Security     CSRFToken
+// @Param        id    path      string                    true  "Study ID"
+// @Param        body  body      model.CreateGroupRequest  true  "Group data"
+// @Success      201   {object}  model.Group
+// @Failure      400   {object}  map[string]string
+// @Router       /admin/studies/{id}/groups [post]
 func (h *AdminHandler) CreateGroup(c *gin.Context) {
 	studyID, err := uuid.Parse(c.Param("id"))
 	if err != nil {
@@ -143,7 +178,14 @@ func (h *AdminHandler) CreateGroup(c *gin.Context) {
 }
 
 // ListGroups godoc
-// GET /api/admin/studies/:id/groups
+// @Summary      List groups for a study
+// @Tags         admin
+// @Produce      json
+// @Security     BearerAuth
+// @Security     CSRFToken
+// @Param        id  path      string  true  "Study ID"
+// @Success      200  {object}  map[string]interface{}
+// @Router       /admin/studies/{id}/groups [get]
 func (h *AdminHandler) ListGroups(c *gin.Context) {
 	studyID, err := uuid.Parse(c.Param("id"))
 	if err != nil {
@@ -160,7 +202,17 @@ func (h *AdminHandler) ListGroups(c *gin.Context) {
 }
 
 // ImportSourceItems godoc
-// POST /api/admin/studies/:id/import
+// @Summary      Import source items from CSV
+// @Tags         admin
+// @Accept       mpfd
+// @Produce      json
+// @Security     BearerAuth
+// @Security     CSRFToken
+// @Param        id    path      string  true  "Study ID"
+// @Param        file  formData  file    true  "CSV file"
+// @Success      200   {object}  map[string]int
+// @Failure      400   {object}  map[string]string
+// @Router       /admin/studies/{id}/import [post]
 func (h *AdminHandler) ImportSourceItems(c *gin.Context) {
 	studyID, err := uuid.Parse(c.Param("id"))
 	if err != nil {
@@ -186,8 +238,20 @@ func (h *AdminHandler) ImportSourceItems(c *gin.Context) {
 }
 
 // UploadAsset godoc
-// POST /api/admin/assets/upload (multipart/form-data)
-// Fields: file(required), method_type(required), source_item_id(optional), title(optional), description(optional)
+// @Summary      Upload a video asset
+// @Tags         admin
+// @Accept       mpfd
+// @Produce      json
+// @Security     BearerAuth
+// @Security     CSRFToken
+// @Param        file            formData  file    true   "MP4 video file"
+// @Param        method_type     formData  string  true   "baseline or candidate"
+// @Param        source_item_id  formData  string  false  "Source item UUID to link"
+// @Param        title           formData  string  false  "Video title"
+// @Param        description     formData  string  false  "Video description"
+// @Success      201  {object}   model.Video
+// @Failure      400  {object}   map[string]string
+// @Router       /admin/assets/upload [post]
 func (h *AdminHandler) UploadAsset(c *gin.Context) {
 	methodType := strings.TrimSpace(c.PostForm("method_type"))
 	if methodType == "" {
@@ -238,7 +302,15 @@ func (h *AdminHandler) UploadAsset(c *gin.Context) {
 }
 
 // ListSourceItems godoc
-// GET /api/admin/source-items
+// @Summary      List source items (pairs)
+// @Tags         admin
+// @Produce      json
+// @Security     BearerAuth
+// @Security     CSRFToken
+// @Param        study_id  query     string  false  "Filter by study UUID"
+// @Param        group_id  query     string  false  "Filter by group UUID"
+// @Success      200       {object}  map[string]interface{}
+// @Router       /admin/source-items [get]
 func (h *AdminHandler) ListSourceItems(c *gin.Context) {
 	var studyID *uuid.UUID
 	var groupID *uuid.UUID
@@ -269,7 +341,13 @@ func (h *AdminHandler) ListSourceItems(c *gin.Context) {
 }
 
 // AnalyticsOverview godoc
-// GET /api/admin/analytics/overview
+// @Summary      Get analytics overview
+// @Tags         admin
+// @Produce      json
+// @Security     BearerAuth
+// @Security     CSRFToken
+// @Success      200  {object}  service.AnalyticsOverview
+// @Router       /admin/analytics/overview [get]
 func (h *AdminHandler) AnalyticsOverview(c *gin.Context) {
 	overview, err := h.analyticsSvc.Overview(c.Request.Context())
 	if err != nil {
@@ -280,7 +358,14 @@ func (h *AdminHandler) AnalyticsOverview(c *gin.Context) {
 }
 
 // AnalyticsStudy godoc
-// GET /api/admin/analytics/study/:id
+// @Summary      Get per-study analytics
+// @Tags         admin
+// @Produce      json
+// @Security     BearerAuth
+// @Security     CSRFToken
+// @Param        id  path      string  true  "Study ID"
+// @Success      200  {object}  service.StudyAnalytics
+// @Router       /admin/analytics/study/{id} [get]
 func (h *AdminHandler) AnalyticsStudy(c *gin.Context) {
 	studyID, err := uuid.Parse(c.Param("id"))
 	if err != nil {
@@ -296,7 +381,13 @@ func (h *AdminHandler) AnalyticsStudy(c *gin.Context) {
 }
 
 // AnalyticsQC godoc
-// GET /api/admin/analytics/qc
+// @Summary      Get QC report
+// @Tags         admin
+// @Produce      json
+// @Security     BearerAuth
+// @Security     CSRFToken
+// @Success      200  {object}  service.QCReport
+// @Router       /admin/analytics/qc [get]
 func (h *AdminHandler) AnalyticsQC(c *gin.Context) {
 	report, err := h.qcSvc.BuildReport(c.Request.Context())
 	if err != nil {
@@ -307,7 +398,13 @@ func (h *AdminHandler) AnalyticsQC(c *gin.Context) {
 }
 
 // ExportCSV godoc
-// GET /api/admin/export/csv
+// @Summary      Export responses as CSV
+// @Tags         admin
+// @Produce      text/csv
+// @Security     BearerAuth
+// @Security     CSRFToken
+// @Success      200  {string}  string
+// @Router       /admin/export/csv [get]
 func (h *AdminHandler) ExportCSV(c *gin.Context) {
 	payload, err := h.exportSvc.ExportCSV(c.Request.Context())
 	if err != nil {
@@ -320,7 +417,13 @@ func (h *AdminHandler) ExportCSV(c *gin.Context) {
 }
 
 // ExportJSON godoc
-// GET /api/admin/export/json
+// @Summary      Export responses as JSON
+// @Tags         admin
+// @Produce      json
+// @Security     BearerAuth
+// @Security     CSRFToken
+// @Success      200  {array}   map[string]string
+// @Router       /admin/export/json [get]
 func (h *AdminHandler) ExportJSON(c *gin.Context) {
 	payload, err := h.exportSvc.ExportJSON(c.Request.Context())
 	if err != nil {
