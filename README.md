@@ -1,22 +1,23 @@
 # Video Comparison Service
 
-Платформа контролируемого парного сравнения видео (baseline vs candidate) для исследований эффектов flooding/explosion. Участники оценивают пары видео, администраторы управляют исследованиями и анализируют результаты.
+Platform for controlled pairwise video comparison (baseline vs candidate) for flooding/explosion VFX research. Participants evaluate video pairs; administrators manage studies and analyze results.
 
-## Стек
+## Stack
 
-| Слой | Технология |
+| Layer | Technology |
 |---|---|
 | Backend | Go 1.25 + Gin |
 | Frontend | React 19 + Vite |
-| База данных | PostgreSQL 16 |
-| Хранилище видео | MinIO (S3-совместимое) |
-| Контейнеры | Docker Compose |
+| Database | PostgreSQL 16 |
+| Video storage | MinIO (S3-compatible) |
+| Containers | Docker Compose |
+| CI | GitHub Actions |
 
 ---
 
-## Быстрый старт
+## Quick Start
 
-### 1. Клонировать и настроить окружение
+### 1. Clone and configure
 
 ```bash
 git clone <repo-url>
@@ -24,222 +25,234 @@ cd comp-video-service
 cp .env.example .env
 ```
 
-Обязательно измените в `.env`:
+Edit `.env` — at minimum set a strong JWT secret:
 ```
-JWT_SECRET=ваш_случайный_секрет_минимум_32_символа
+JWT_SECRET=your_random_secret_at_least_32_chars
 ```
 
-### 2. Запустить все сервисы
+### 2. Start all services
 
 ```bash
 docker compose up -d --build
 ```
 
-Сервисы поднимаются в порядке: PostgreSQL → MinIO → Backend → Frontend.
-Миграции применяются автоматически при старте backend.
+Services start in order: PostgreSQL → MinIO → Backend → Frontend.
+Migrations are applied automatically on backend startup.
 
-### 3. Создать первого администратора
+### 3. Create the first admin user
 
 ```bash
-docker compose exec backend ./seed
+docker compose run --rm \
+  -e SEED_USERNAME=admin \
+  -e SEED_PASSWORD=yourpassword \
+  seed
 ```
 
-По умолчанию создаёт пользователя `admin` / `admin123`.
+Or uncomment the `seed` service in `docker-compose.yml` and set `SEED_USERNAME` / `SEED_PASSWORD` in `.env`.
 
-### 4. Открыть в браузере
+### 4. Open in browser
 
-| URL | Назначение |
+| URL | Purpose |
 |---|---|
-| http://localhost:5173 | Интерфейс участника |
-| http://localhost:5173/admin/login | Панель администратора |
-| http://localhost:9001 | MinIO Console (minioadmin / minioadmin) |
+| http://localhost:5173 | Participant interface |
+| http://localhost:5173/admin/login | Admin panel |
+| http://localhost:9001 | MinIO Console |
 
 ---
 
-## Архитектура
+## Architecture
 
 ```
 browser
-  ├── :5173  →  nginx (frontend SPA)
+  ├── :5173  →  Vite dev server (frontend SPA)
   │               └── /api/* proxy → backend:8080
-  └── :9000  →  MinIO (прямые GET видео, публичный бакет)
+  └── :9000  →  MinIO (direct video GET, public bucket)
 
 backend:8080
-  ├── /api/session/*   — участник (без авторизации)
-  ├── /api/task/*      — участник (без авторизации)
-  └── /api/admin/*     — администратор (JWT + CSRF)
+  ├── /api/session/*   — participant (no auth)
+  ├── /api/task/*      — participant (no auth)
+  └── /api/admin/*     — admin (JWT + CSRF)
 
-postgres:5432  ←  backend
+postgres:5432  ←  backend (internal Docker network)
 minio:9000     ←  backend (upload), browser (download)
 ```
 
 ---
 
-## Workflow администратора
+## Admin Workflow
 
-### 1. Создать исследование
-`/admin/studies` → кнопка **+ Создать**
+### 1. Create a study
+`/admin/studies` → **+ Create**
 
-Поля:
-- Название, тип эффекта (`flooding` / `explosion` / `mixed`)
-- Количество заданий на участника
-- Текст инструкций
-- Опции: Tie (равны), Причины выбора, Уверенность
+Fields: name, effect type (`flooding` / `explosion` / `mixed`), tasks per participant, instructions text, options (tie allowed, reasons, confidence).
 
-### 2. Создать группы
-`/admin/pairs` → выбрать исследование → секция **Группы** → **+ Группа**
+### 2. Create groups
+`/admin/pairs` → select study → **Groups** section → **+ Group**
 
-Группа = категория пар (например, «сцена 1», «городская локация»).
-Скопируйте UUID группы — он нужен для CSV.
+A group is a category of pairs (e.g. "scene 1", "urban location"). Copy the group UUID — you'll need it for CSV import.
 
-### 3. Импортировать пары через CSV
+### 3. Import pairs via CSV
 
-Формат файла:
+File format:
 ```csv
 group_id,source_image_id,pair_code,difficulty,is_attention_check,notes,baseline_s3_key,candidate_s3_key
-550e8400-...,img_001,flood_001,easy,false,описание,,
-550e8400-...,img_002,flood_002,medium,true,контрольная пара,,
+550e8400-...,img_001,flood_001,easy,false,description,,
+550e8400-...,img_002,flood_002,medium,true,attention check,,
 ```
 
-| Колонка | Обязательная | Описание |
+| Column | Required | Description |
 |---|---|---|
-| `group_id` | **да** | UUID группы |
-| `source_image_id` | нет | ваш внутренний ID изображения |
-| `pair_code` | нет | читаемый код пары |
-| `difficulty` | нет | `easy` / `medium` / `hard` |
-| `is_attention_check` | нет | `true` / `false` |
-| `notes` | нет | комментарий |
-| `baseline_s3_key` | нет | S3-ключ уже загруженного видео |
-| `candidate_s3_key` | нет | S3-ключ уже загруженного видео |
+| `group_id` | **yes** | Group UUID |
+| `source_image_id` | no | Your internal image ID |
+| `pair_code` | no | Human-readable code |
+| `difficulty` | no | `easy` / `medium` / `hard` |
+| `is_attention_check` | no | `true` / `false` |
+| `notes` | no | Comment |
+| `baseline_s3_key` | no | S3 key of an already-uploaded video |
+| `candidate_s3_key` | no | S3 key of an already-uploaded video |
 
-### 4. Загрузить видео-ассеты
-`/admin/pairs` → секция **Загрузить видео-ассет**
+### 4. Upload video assets
+`/admin/pairs` → **Upload video asset**
 
-Для каждой пары нужно загрузить **два** видео: `baseline` и `candidate`.
-Задание назначается участнику только если оба ассета присутствуют.
+Each pair needs two videos: `baseline` and `candidate`. A pair is only assigned to participants once both assets are present.
 
-### 5. Активировать исследование
-`/admin/studies` → кнопка **→ Активно**
+### 5. Activate the study
+`/admin/studies` → **→ Active**
 
-Только активные исследования доступны участникам.
+Only active studies are accessible to participants.
 
-### 6. Поделиться ссылкой
-`/admin/studies` → кнопка **🔗 Ссылка** — копирует URL вида:
+### 6. Share the link
+`/admin/studies` → **🔗 Link** — copies a URL like:
 ```
 http://localhost:5173/?study_id=<uuid>
 ```
 
 ---
 
-## Workflow участника
+## Participant Workflow
 
 ```
-Приветствие → Инструкции → Практика → Задания → Пауза → Завершение
+Welcome → Instructions → Practice → Tasks → Break → Completion
 ```
 
-1. Открыть ссылку исследования
-2. Заполнить роль и опыт
-3. Ознакомиться с инструкциями
-4. Выполнить тренировочные пары
-5. Оценить видеопары: выбрать **A** / **B** / **Равны**, указать причину и уверенность
-6. Получить код завершения
+1. Open the study link
+2. Fill in role and experience
+3. Read instructions
+4. Complete practice pairs
+5. Rate video pairs: choose **A** / **B** / **Tie**, select reason and confidence
+6. Receive completion code
 
-### Горячие клавиши на странице задания
-| Клавиша | Действие |
+### Keyboard shortcuts on the task page
+
+| Key | Action |
 |---|---|
-| `1` | Выбрать левое видео (A) |
-| `2` | Выбрать правое видео (B) |
-| `0` | Равны (Tie) |
-| `R` | Переиграть оба видео |
-| `N` | Следующее задание (после выбора) |
+| `1` | Select left video (A) |
+| `2` | Select right video (B) |
+| `0` | Tie |
+| `R` | Replay both videos |
+| `N` | Next task (after selection) |
 
 ---
 
 ## REST API
 
-### Публичные эндпоинты (участник)
+OpenAPI spec: `backend/docs/swagger.yaml`
 
-| Метод | Путь | Описание |
+### Public endpoints (participant)
+
+| Method | Path | Description |
 |---|---|---|
-| `POST` | `/api/session/start` | Начать сессию → `session_token` + первое задание |
-| `GET` | `/api/session/:token/next-task` | Следующее задание (204 если заданий нет) |
-| `POST` | `/api/session/:token/complete` | Завершить → `completion_code` |
-| `POST` | `/api/task/:id/response` | Отправить ответ |
-| `POST` | `/api/task/:id/event` | Лог события (replay, etc.) |
+| `POST` | `/api/session/start` | Start session → `session_token` + first task |
+| `GET` | `/api/session/:token/next-task` | Next task (204 if no tasks left) |
+| `POST` | `/api/session/:token/complete` | Complete → `completion_code` |
+| `POST` | `/api/task/:id/response` | Submit response |
+| `POST` | `/api/task/:id/event` | Log event (replay, etc.) |
 
-### Административные эндпоинты (JWT + CSRF)
+### Admin endpoints (JWT + CSRF)
 
-| Метод | Путь | Описание |
+| Method | Path | Description |
 |---|---|---|
-| `POST` | `/api/admin/login` | Авторизация → JWT + CSRF токен |
-| `GET` | `/api/admin/studies` | Список исследований |
-| `POST` | `/api/admin/studies` | Создать исследование |
-| `PATCH` | `/api/admin/studies/:id` | Изменить статус |
-| `GET` | `/api/admin/studies/:id/groups` | Список групп исследования |
-| `POST` | `/api/admin/studies/:id/groups` | Создать группу |
-| `POST` | `/api/admin/studies/:id/import` | CSV-импорт пар |
-| `POST` | `/api/admin/assets/upload` | Загрузить видео-ассет (MP4) |
-| `GET` | `/api/admin/source-items` | Список пар (фильтры: study_id, group_id) |
-| `GET` | `/api/admin/analytics/overview` | Сводная аналитика |
-| `GET` | `/api/admin/analytics/study/:id` | Детали по исследованию |
-| `GET` | `/api/admin/analytics/qc` | QC-отчёт участников |
-| `GET` | `/api/admin/export/csv` | Экспорт ответов в CSV |
-| `GET` | `/api/admin/export/json` | Экспорт ответов в JSON |
+| `POST` | `/api/admin/login` | Login → JWT + CSRF token |
+| `GET` | `/api/admin/studies` | List studies |
+| `POST` | `/api/admin/studies` | Create study |
+| `PATCH` | `/api/admin/studies/:id` | Update status |
+| `GET` | `/api/admin/studies/:id/groups` | List groups |
+| `POST` | `/api/admin/studies/:id/groups` | Create group |
+| `POST` | `/api/admin/studies/:id/import` | CSV pair import |
+| `POST` | `/api/admin/assets/upload` | Upload video asset (MP4) |
+| `GET` | `/api/admin/source-items` | List pairs (filters: study_id, group_id) |
+| `GET` | `/api/admin/analytics/overview` | Summary analytics |
+| `GET` | `/api/admin/analytics/study/:id` | Per-study details |
+| `GET` | `/api/admin/analytics/qc` | Participant QC report |
+| `GET` | `/api/admin/export/csv` | Export responses as CSV |
+| `GET` | `/api/admin/export/json` | Export responses as JSON |
 
 ---
 
-## Структура проекта
+## Project Structure
 
 ```
 comp-video-service/
 ├── backend/
 │   ├── cmd/
-│   │   ├── server/main.go        # Точка входа, роутер, DI
-│   │   └── seed/main.go          # Скрипт создания admin
+│   │   ├── server/main.go        # Entrypoint, router, DI
+│   │   └── seed/main.go          # Admin user seeder CLI
 │   ├── internal/
-│   │   ├── config/               # Загрузка env-переменных
-│   │   ├── handler/              # HTTP-обработчики (Gin)
-│   │   ├── middleware/           # JWT, CSRF, rate limit
-│   │   ├── model/                # Go-структуры (модели данных)
-│   │   ├── repository/           # Запросы к PostgreSQL (pgx/v5)
-│   │   ├── service/              # Бизнес-логика
-│   │   └── storage/              # S3/MinIO клиент
-│   └── migrations/
-│       ├── 001_init.up.sql       # Базовые таблицы
-│       └── 002_study_schema.up.sql # Схема исследований
+│   │   ├── config/               # Env-based config
+│   │   ├── handler/              # Gin HTTP handlers
+│   │   ├── middleware/           # JWT, CSRF, rate limiting
+│   │   ├── model/                # Domain structs
+│   │   ├── repository/           # PostgreSQL queries (pgx/v5)
+│   │   ├── service/              # Business logic
+│   │   └── storage/              # S3/MinIO client
+│   ├── migrations/               # golang-migrate SQL files
+│   ├── tests/                    # Integration tests (build tag: integration)
+│   └── docs/                     # OpenAPI spec (swagger.yaml, swagger.json)
 ├── frontend/
 │   └── src/
-│       ├── api/client.js         # HTTP-клиент (fetch + JWT/CSRF)
+│       ├── api/client.js         # All HTTP calls — single source of truth
 │       ├── context/              # SessionContext, ToastContext
 │       ├── components/           # SyncVideoPlayer, ChoicePanel, etc.
-│       └── pages/                # Страницы участника и администратора
+│       └── pages/                # Participant and admin pages
+├── .github/workflows/
+│   ├── backend.yml               # Lint, unit tests, coverage ≥70%, build
+│   ├── frontend.yml              # Lint, build
+│   └── api-contract.yml         # OpenAPI spec drift + frontend contract check
+├── docs/
+│   └── to_contributor.md         # Development workflow with LLM agents
+├── AGENTS.md                     # Project context for all agents
+├── INFRA_AGENT.md                # Instructions for Agent 1 (infra)
+├── BACKEND_AGENT.md              # Instructions for Agent 3 (backend)
+├── FRONTEND_AGENT.md             # Instructions for Agent 2 (frontend)
 ├── docker-compose.yml
 ├── .env.example
-└── sample_pairs.csv              # Пример CSV для импорта пар
+└── sample_pairs.csv              # Example CSV for pair import
 ```
 
 ---
 
-## Переменные окружения
+## Environment Variables
 
-| Переменная | Пример | Описание |
+| Variable | Example | Description |
 |---|---|---|
-| `POSTGRES_DB` | `compvideo` | Имя БД |
-| `POSTGRES_USER` | `cvs` | Пользователь БД |
-| `POSTGRES_PASSWORD` | `cvs_secret` | Пароль БД |
-| `MINIO_ROOT_USER` | `minioadmin` | Логин MinIO |
-| `MINIO_ROOT_PASSWORD` | `minioadmin` | Пароль MinIO |
-| `S3_BUCKET` | `videos` | Имя бакета |
-| `S3_PUBLIC_URL` | `http://localhost:9000` | Публичный URL MinIO (видит браузер) |
-| `BACKEND_PORT` | `8080` | Порт backend |
-| `JWT_SECRET` | — | Секрет для JWT (обязательно сменить!) |
-| `CORS_ORIGINS` | `http://localhost:5173` | Разрешённые origins |
+| `POSTGRES_DB` | `comp_video` | Database name |
+| `POSTGRES_USER` | `postgres` | Database user |
+| `POSTGRES_PASSWORD` | `postgres` | Database password |
+| `MINIO_ROOT_USER` | `minioadmin` | MinIO login |
+| `MINIO_ROOT_PASSWORD` | `minioadmin` | MinIO password |
+| `S3_BUCKET` | `videos` | Bucket name |
+| `S3_PUBLIC_URL` | `http://localhost:9000` | Public MinIO URL (seen by browser) |
+| `BACKEND_PORT` | `8080` | Backend port |
+| `JWT_SECRET` | — | JWT secret (**must be changed**) |
+| `CORS_ORIGINS` | `http://localhost:5173` | Allowed origins |
+| `SEED_USERNAME` | `admin` | Admin username for seeder |
+| `SEED_PASSWORD` | — | Admin password for seeder (**required**) |
 
 ---
 
-## Разработка
+## Development
 
-### Backend (локально без Docker)
+### Backend (local, no Docker)
 
 ```bash
 cd backend
@@ -247,7 +260,7 @@ go mod download
 go run ./cmd/server
 ```
 
-### Frontend (локально без Docker)
+### Frontend (local, no Docker)
 
 ```bash
 cd frontend
@@ -255,24 +268,49 @@ npm install
 npm run dev   # http://localhost:5173
 ```
 
-### Тесты
+### Tests
 
 ```bash
-# Backend unit-тесты
-cd backend && go test ./...
+# Backend unit tests + coverage
+cd backend && go test ./... -race -count=1
 
-# Линтер
+# Backend integration tests (requires Docker)
+cd backend && go test -tags integration ./tests/... -v
+
+# Backend linter
 cd backend && golangci-lint run ./...
 
-# Frontend линтер
+# Frontend linter
 cd frontend && npm run lint
 
-# Frontend сборка
+# Frontend build
 cd frontend && npm run build
+
+# API contract validation
+cd frontend && npm run validate:api
 ```
 
-### Применить миграции вручную
+### Regenerate OpenAPI spec
 
 ```bash
-docker compose exec postgres psql -U cvs -d compvideo -f /docker-entrypoint-initdb.d/002_study_schema.up.sql
+cd backend
+swag init -g cmd/server/main.go -o docs --outputTypes yaml,json --quiet
 ```
+
+Commit the updated `docs/swagger.yaml` and `docs/swagger.json`.
+
+---
+
+## CI
+
+| Workflow | Triggers | What it checks |
+|---|---|---|
+| `backend.yml` | `backend/**` | lint, unit tests, coverage ≥70%, binary builds, integration tests |
+| `frontend.yml` | `frontend/**` | lint, production build |
+| `api-contract.yml` | `backend/**`, `frontend/src/api/**` | spec not drifted, all frontend API calls exist in spec |
+
+---
+
+## Working with LLM Agents
+
+This project is developed using LLM coding agents. See [docs/to_contributor.md](docs/to_contributor.md) for how to initialize and use them.
