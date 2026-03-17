@@ -16,10 +16,7 @@ import (
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/rs/cors"
-	swaggerFiles "github.com/swaggo/files"
-	ginSwagger "github.com/swaggo/gin-swagger"
 
-	_ "comp-video-service/backend/docs"
 	"comp-video-service/backend/internal/config"
 	"comp-video-service/backend/internal/handler"
 	"comp-video-service/backend/internal/middleware"
@@ -111,9 +108,6 @@ func main() {
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
 	})
-	if os.Getenv("GIN_MODE") != gin.ReleaseMode {
-		r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
-	}
 
 	api := r.Group("/api")
 
