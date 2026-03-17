@@ -191,10 +191,7 @@ export const api = {
   getAssets: () => request('/admin/assets'),
 
   createPair: (studyId, body) =>
-    request(`/admin/studies/${studyId}/pairs`, {
-      method: 'POST',
-      body: JSON.stringify(body),
-    }),
+    request(`/admin/studies/${studyId}/pairs`, { method: 'POST', body: JSON.stringify(body) }),
 
   getSourceItems: (params = {}) => {
     const qs = new URLSearchParams(params).toString()
