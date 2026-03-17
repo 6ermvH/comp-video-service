@@ -45,6 +45,7 @@ Thumbs.db
 *.swp
 *.swo
 *~
+.claude
 
 # ───────── MinIO / S3 data (local dev) ─────────
 .minio/
