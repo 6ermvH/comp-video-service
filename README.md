@@ -1,5 +1,10 @@
 # Video Comparison Service
 
+![Go version](https://img.shields.io/badge/go-1.25-00ADD8?logo=go&logoColor=white)
+![Backend CI](https://github.com/6ermvH/comp-video-service/actions/workflows/backend.yml/badge.svg)
+![Frontend CI](https://github.com/6ermvH/comp-video-service/actions/workflows/frontend.yml/badge.svg)
+![API Contract](https://github.com/6ermvH/comp-video-service/actions/workflows/api-contract.yml/badge.svg)
+
 Platform for controlled pairwise video comparison (baseline vs candidate) for flooding/explosion VFX research. Participants evaluate video pairs; administrators manage studies and analyze results.
 
 ## Stack
