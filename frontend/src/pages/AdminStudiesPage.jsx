@@ -13,7 +13,7 @@ const STATUS_TRANSITIONS = {
   draft:    ['active'],
   active:   ['paused', 'archived'],
   paused:   ['active', 'archived'],
-  archived: [],
+  archived: ['active'],
 }
 
 const STATUS_LABELS = {
@@ -38,6 +38,9 @@ export default function AdminStudiesPage() {
     confidence_enabled: true,
   })
   const [creating, setCreating] = useState(false)
+  const [editStudy, setEditStudy] = useState(null)
+  const [editForm, setEditForm] = useState({})
+  const [saving, setSaving] = useState(false)
 
   const load = async () => {
     setLoading(true)
@@ -74,6 +77,23 @@ export default function AdminStudiesPage() {
       setError(err.message)
     } finally {
       setCreating(false)
+    }
+  }
+
+  const handleEditSave = async (e) => {
+    e.preventDefault()
+    setSaving(true)
+    try {
+      await apiCall(() => api.updateStudy(editStudy.id, {
+        ...editForm,
+        max_tasks_per_participant: Number(editForm.max_tasks_per_participant),
+      }))
+      setEditStudy(null)
+      load()
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -216,6 +236,24 @@ export default function AdminStudiesPage() {
                       onClick={() => copyLink(study.id)} title="Скопировать ссылку для участников">
                       🔗 Ссылка
                     </button>
+                    <button
+                      className="btn btn-ghost"
+                      style={{ fontSize: '12px', padding: '6px 10px' }}
+                      onClick={() => {
+                        setEditStudy(study)
+                        setEditForm({
+                          name: study.name,
+                          effect_type: study.effect_type,
+                          max_tasks_per_participant: study.max_tasks_per_participant,
+                          instructions_text: study.instructions_text ?? '',
+                          tie_option_enabled: study.tie_option_enabled,
+                          reasons_enabled: study.reasons_enabled,
+                          confidence_enabled: study.confidence_enabled,
+                        })
+                      }}
+                    >
+                      ✎ Редактировать
+                    </button>
                     {transitions.map((s) => (
                       <button key={s} className="btn btn-ghost"
                         style={{ fontSize: '12px', padding: '6px 10px' }}
@@ -228,6 +266,75 @@ export default function AdminStudiesPage() {
               </div>
             )
           })}
+        </div>
+      )}
+
+      {/* Edit modal */}
+      {editStudy && (
+        <div style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          zIndex: 1000, padding: '16px',
+        }}>
+          <div className="card" style={{ width: '100%', maxWidth: '560px', padding: '28px' }}>
+            <h2 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '20px' }}>
+              Редактировать исследование
+            </h2>
+            <form onSubmit={handleEditSave} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px' }}>
+                <div>
+                  <label className="label">Название *</label>
+                  <input className="input" required value={editForm.name}
+                    onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} />
+                </div>
+                <div>
+                  <label className="label">Тип эффекта</label>
+                  <select className="input" value={editForm.effect_type}
+                    onChange={(e) => setEditForm({ ...editForm, effect_type: e.target.value })}>
+                    {EFFECT_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="label">Заданий на участника</label>
+                <input className="input" type="number" min={1} max={100}
+                  value={editForm.max_tasks_per_participant}
+                  onChange={(e) => setEditForm({ ...editForm, max_tasks_per_participant: e.target.value })} />
+              </div>
+
+              <div>
+                <label className="label">Текст инструкций</label>
+                <textarea className="input" rows={4}
+                  value={editForm.instructions_text}
+                  onChange={(e) => setEditForm({ ...editForm, instructions_text: e.target.value })}
+                  style={{ resize: 'vertical' }} />
+              </div>
+
+              <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap' }}>
+                {[
+                  { key: 'tie_option_enabled', label: 'Опция "Равны"' },
+                  { key: 'reasons_enabled', label: 'Причины выбора' },
+                  { key: 'confidence_enabled', label: 'Уверенность' },
+                ].map(({ key, label }) => (
+                  <label key={key} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '14px' }}>
+                    <input type="checkbox" checked={editForm[key]}
+                      onChange={(e) => setEditForm({ ...editForm, [key]: e.target.checked })} />
+                    {label}
+                  </label>
+                ))}
+              </div>
+
+              <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                <button type="button" className="btn btn-ghost" onClick={() => setEditStudy(null)}>
+                  Отмена
+                </button>
+                <button type="submit" className="btn btn-primary" disabled={saving}>
+                  {saving ? 'Сохранение…' : 'Сохранить'}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>
