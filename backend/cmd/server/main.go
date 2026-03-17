@@ -125,7 +125,7 @@ func main() {
 	{
 		adminGroup.GET("/studies", adminH.ListStudies)
 		adminGroup.POST("/studies", adminH.CreateStudy)
-		adminGroup.PATCH("/studies/:id", adminH.PatchStudyStatus)
+		adminGroup.PATCH("/studies/:id", adminH.UpdateStudy)
 
 		adminGroup.GET("/studies/:id/groups", adminH.ListGroups)
 		adminGroup.POST("/studies/:id/groups", adminH.CreateGroup)

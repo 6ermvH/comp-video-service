@@ -22,7 +22,7 @@ import (
 type mockStudyService struct {
 	listStudiesFn     func(context.Context) ([]*model.Study, error)
 	createStudyFn     func(context.Context, *model.CreateStudyRequest) (*model.Study, error)
-	updateStatusFn    func(context.Context, uuid.UUID, string) (*model.Study, error)
+	updateStudyFn     func(context.Context, uuid.UUID, *model.UpdateStudyRequest) (*model.Study, error)
 	listGroupsFn      func(context.Context, uuid.UUID) ([]*model.Group, error)
 	createGroupFn     func(context.Context, uuid.UUID, *model.CreateGroupRequest) (*model.Group, error)
 	importCSVFn       func(context.Context, uuid.UUID, io.Reader) (int, error)
@@ -35,8 +35,8 @@ func (m *mockStudyService) ListStudies(ctx context.Context) ([]*model.Study, err
 func (m *mockStudyService) CreateStudy(ctx context.Context, r *model.CreateStudyRequest) (*model.Study, error) {
 	return m.createStudyFn(ctx, r)
 }
-func (m *mockStudyService) UpdateStatus(ctx context.Context, id uuid.UUID, s string) (*model.Study, error) {
-	return m.updateStatusFn(ctx, id, s)
+func (m *mockStudyService) UpdateStudy(ctx context.Context, id uuid.UUID, req *model.UpdateStudyRequest) (*model.Study, error) {
+	return m.updateStudyFn(ctx, id, req)
 }
 func (m *mockStudyService) ListGroups(ctx context.Context, id uuid.UUID) ([]*model.Group, error) {
 	return m.listGroupsFn(ctx, id)
@@ -134,11 +134,11 @@ func TestAdminHandlerCreateStudyBadJSON(t *testing.T) {
 	}
 }
 
-func TestAdminHandlerPatchStudyStatusInvalidID(t *testing.T) {
+func TestAdminHandlerUpdateStudyInvalidID(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	h := NewAdminHandler(&mockStudyService{}, &mockAssetService{}, &mockAnalyticsService{}, &mockQCService{}, &mockExportService{})
 	r := gin.New()
-	r.PATCH("/studies/:id", h.PatchStudyStatus)
+	r.PATCH("/studies/:id", h.UpdateStudy)
 
 	w := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodPatch, "/studies/invalid", mustJSON(t, map[string]string{"status": "active"}))
@@ -222,8 +222,11 @@ func TestAdminHandlerCreateStudyAndPatchSuccessAndErrors(t *testing.T) {
 			createStudyFn: func(context.Context, *model.CreateStudyRequest) (*model.Study, error) {
 				return &model.Study{ID: studyID}, nil
 			},
-			updateStatusFn: func(context.Context, uuid.UUID, string) (*model.Study, error) {
-				return &model.Study{ID: studyID, Status: "active"}, nil
+			updateStudyFn: func(_ context.Context, _ uuid.UUID, req *model.UpdateStudyRequest) (*model.Study, error) {
+				if req.Status == nil {
+					return nil, errors.New("status required")
+				}
+				return &model.Study{ID: studyID, Status: *req.Status}, nil
 			},
 		},
 		&mockAssetService{},
@@ -233,7 +236,7 @@ func TestAdminHandlerCreateStudyAndPatchSuccessAndErrors(t *testing.T) {
 	)
 	r := gin.New()
 	r.POST("/studies", h.CreateStudy)
-	r.PATCH("/studies/:id", h.PatchStudyStatus)
+	r.PATCH("/studies/:id", h.UpdateStudy)
 
 	w := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodPost, "/studies", mustJSON(t, map[string]any{"name": "A", "effect_type": "flooding"}))
@@ -256,7 +259,7 @@ func TestAdminHandlerCreateStudyAndPatchSuccessAndErrors(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json")
 	r.ServeHTTP(w, req)
 	if w.Code != http.StatusBadRequest {
-		t.Fatalf("expected 400 bad patch body, got %d", w.Code)
+		t.Fatalf("expected 400 on service validation error, got %d", w.Code)
 	}
 }
 

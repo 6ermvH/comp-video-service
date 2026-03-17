@@ -18,7 +18,7 @@ import (
 type studyService interface {
 	ListStudies(ctx context.Context) ([]*model.Study, error)
 	CreateStudy(ctx context.Context, req *model.CreateStudyRequest) (*model.Study, error)
-	UpdateStatus(ctx context.Context, id uuid.UUID, status string) (*model.Study, error)
+	UpdateStudy(ctx context.Context, id uuid.UUID, req *model.UpdateStudyRequest) (*model.Study, error)
 	ListGroups(ctx context.Context, studyID uuid.UUID) ([]*model.Group, error)
 	CreateGroup(ctx context.Context, studyID uuid.UUID, req *model.CreateGroupRequest) (*model.Group, error)
 	ImportSourceItemsCSV(ctx context.Context, studyID uuid.UUID, r io.Reader) (int, error)
@@ -114,30 +114,32 @@ func (h *AdminHandler) CreateStudy(c *gin.Context) {
 	c.JSON(http.StatusCreated, study)
 }
 
-// PatchStudyStatus godoc
-// @Summary      Update study status
+// UpdateStudy godoc
+// @Summary      Update study
+// @Description  Update study status and/or fields
 // @Tags         admin
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
 // @Security     CSRFToken
-// @Param        id    path      string                          true  "Study ID"
-// @Param        body  body      model.UpdateStudyStatusRequest  true  "Status update"
+// @Param        id    path      string                    true  "Study ID"
+// @Param        body  body      model.UpdateStudyRequest  true  "Update payload"
 // @Success      200   {object}  model.Study
 // @Failure      400   {object}  map[string]string
+// @Failure      404   {object}  map[string]string
 // @Router       /admin/studies/{id} [patch]
-func (h *AdminHandler) PatchStudyStatus(c *gin.Context) {
+func (h *AdminHandler) UpdateStudy(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid study id"})
 		return
 	}
-	var req model.UpdateStudyStatusRequest
+	var req model.UpdateStudyRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	study, err := h.studySvc.UpdateStatus(c.Request.Context(), id, req.Status)
+	study, err := h.studySvc.UpdateStudy(c.Request.Context(), id, &req)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return

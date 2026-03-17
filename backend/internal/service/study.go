@@ -24,6 +24,7 @@ type studyRepository interface {
 	List(ctx context.Context) ([]*model.Study, error)
 	Create(ctx context.Context, req *model.CreateStudyRequest) (*model.Study, error)
 	UpdateStatus(ctx context.Context, id uuid.UUID, status string) (*model.Study, error)
+	Update(ctx context.Context, id uuid.UUID, req *model.UpdateStudyRequest) (*model.Study, error)
 }
 
 type groupRepository interface {
@@ -72,6 +73,19 @@ func (s *StudyService) UpdateStatus(ctx context.Context, id uuid.UUID, status st
 		return nil, fmt.Errorf("unsupported status: %s", status)
 	}
 	return s.studyRepo.UpdateStatus(ctx, id, normalized)
+}
+
+func (s *StudyService) UpdateStudy(ctx context.Context, id uuid.UUID, req *model.UpdateStudyRequest) (*model.Study, error) {
+	if req.Status != nil {
+		normalized := strings.ToLower(*req.Status)
+		switch normalized {
+		case "draft", "active", "paused", "archived":
+			req.Status = &normalized
+		default:
+			return nil, fmt.Errorf("unsupported status: %s", *req.Status)
+		}
+	}
+	return s.studyRepo.Update(ctx, id, req)
 }
 
 func (s *StudyService) CreateGroup(ctx context.Context, studyID uuid.UUID, req *model.CreateGroupRequest) (*model.Group, error) {

@@ -35,3 +35,16 @@ type CreateStudyRequest struct {
 type UpdateStudyStatusRequest struct {
 	Status string `json:"status" binding:"required"`
 }
+
+// UpdateStudyRequest is the payload for updating study fields.
+// All fields are optional — only non-nil values are applied.
+type UpdateStudyRequest struct {
+	Status                 *string `json:"status"`
+	Name                   *string `json:"name"`
+	EffectType             *string `json:"effect_type"`
+	MaxTasksPerParticipant *int    `json:"max_tasks_per_participant"`
+	InstructionsText       *string `json:"instructions_text"`
+	TieOptionEnabled       *bool   `json:"tie_option_enabled"`
+	ReasonsEnabled         *bool   `json:"reasons_enabled"`
+	ConfidenceEnabled      *bool   `json:"confidence_enabled"`
+}
