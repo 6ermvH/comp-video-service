@@ -58,6 +58,7 @@ jobs:
       - name: Build seed
         run: go build -o /dev/null ./cmd/seed
 
+
   integration:
     name: Integration Tests
     runs-on: ubuntu-latest
