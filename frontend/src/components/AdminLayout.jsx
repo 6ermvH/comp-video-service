@@ -6,6 +6,7 @@ import { useWindowWidth } from '../hooks/useWindowWidth.js'
 const NAV_ITEMS = [
   { path: '/admin/studies',   label: 'Исследования', icon: '🔬' },
   { path: '/admin/pairs',     label: 'Пары и ассеты', icon: '🎬' },
+  { path: '/admin/library',   label: 'Видеотека',     icon: '🎞️' },
   { path: '/admin/analytics', label: 'Аналитика',     icon: '📊' },
 ]
 

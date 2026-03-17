@@ -27,6 +27,12 @@ export default function AdminPairsPage() {
   const [assetMeta, setAssetMeta]       = useState({ source_item_id: '', method_type: 'baseline', title: '', description: '' })
   const [uploading, setUploading]       = useState(false)
 
+  // Pair builder state
+  const [assets, setAssets]               = useState([])
+  const [pairForm, setPairForm]           = useState({ baseline_video_id: '', candidate_video_id: '', group_id: '', pair_code: '', difficulty: '' })
+  const [creatingPair, setCreatingPair]   = useState(false)
+  const [showPairBuilder, setShowPairBuilder] = useState(false)
+
   // Load studies on mount
   useEffect(() => {
     api.getStudies()
@@ -45,10 +51,12 @@ export default function AdminPairsPage() {
     Promise.all([
       api.getGroups(selectedStudy),
       api.getSourceItems({ study_id: selectedStudy }),
+      api.getAssets(),
     ])
-      .then(([gData, sData]) => {
+      .then(([gData, sData, aData]) => {
         setGroups(gData?.groups ?? [])
         setSourceItems(sData?.source_items ?? [])
+        setAssets(aData?.assets ?? [])
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false))
@@ -117,6 +125,31 @@ export default function AdminPairsPage() {
       setError(err.message)
     } finally {
       setUploading(false)
+    }
+  }
+
+  const handleCreatePair = async (e) => {
+    e.preventDefault()
+    if (!selectedStudy) return
+    setCreatingPair(true)
+    setError(null)
+    try {
+      await apiCall(() => api.createPair(selectedStudy, {
+        group_id: pairForm.group_id,
+        baseline_video_id: pairForm.baseline_video_id,
+        candidate_video_id: pairForm.candidate_video_id,
+        pair_code: pairForm.pair_code,
+        difficulty: pairForm.difficulty,
+      }))
+      setSuccessMsg('Пара создана')
+      setPairForm({ baseline_video_id: '', candidate_video_id: '', group_id: '', pair_code: '', difficulty: '' })
+      setShowPairBuilder(false)
+      const data = await api.getSourceItems({ study_id: selectedStudy })
+      setSourceItems(data?.source_items ?? [])
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setCreatingPair(false)
     }
   }
 
@@ -279,6 +312,74 @@ export default function AdminPairsPage() {
               </button>
             </form>
           </div>
+
+          {/* ── Pair builder ─────────────────────────────────── */}
+          {selectedStudy && (
+            <div className="card">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: showPairBuilder ? '16px' : 0 }}>
+                <h2 style={{ fontSize: '16px', fontWeight: 600 }}>Создать пару из библиотеки</h2>
+                <button className="btn btn-ghost" style={{ fontSize: '13px' }}
+                  onClick={() => setShowPairBuilder(!showPairBuilder)}>
+                  {showPairBuilder ? '▲ Свернуть' : '▼ Развернуть'}
+                </button>
+              </div>
+
+              {showPairBuilder && (
+                <form onSubmit={handleCreatePair} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
+                    <div>
+                      <label className="label">Группа *</label>
+                      <select className="input" required value={pairForm.group_id}
+                        onChange={(e) => setPairForm({ ...pairForm, group_id: e.target.value })}>
+                        <option value="">— выберите группу —</option>
+                        {groups.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="label">Baseline видео *</label>
+                      <select className="input" required value={pairForm.baseline_video_id}
+                        onChange={(e) => setPairForm({ ...pairForm, baseline_video_id: e.target.value })}>
+                        <option value="">— выберите baseline —</option>
+                        {assets.filter((a) => a.method_type === 'baseline' && !a.source_item_id)
+                          .map((a) => <option key={a.id} value={a.id}>{a.title || a.s3_key}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="label">Candidate видео *</label>
+                      <select className="input" required value={pairForm.candidate_video_id}
+                        onChange={(e) => setPairForm({ ...pairForm, candidate_video_id: e.target.value })}>
+                        <option value="">— выберите candidate —</option>
+                        {assets.filter((a) => a.method_type === 'candidate' && !a.source_item_id)
+                          .map((a) => <option key={a.id} value={a.id}>{a.title || a.s3_key}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
+                    <div>
+                      <label className="label">Код пары</label>
+                      <input className="input" value={pairForm.pair_code}
+                        onChange={(e) => setPairForm({ ...pairForm, pair_code: e.target.value })} />
+                    </div>
+                    <div>
+                      <label className="label">Сложность</label>
+                      <select className="input" value={pairForm.difficulty}
+                        onChange={(e) => setPairForm({ ...pairForm, difficulty: e.target.value })}>
+                        <option value="">—</option>
+                        <option value="easy">easy</option>
+                        <option value="medium">medium</option>
+                        <option value="hard">hard</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                    <button type="submit" className="btn btn-primary" disabled={creatingPair}>
+                      {creatingPair ? 'Создание…' : '+ Создать пару'}
+                    </button>
+                  </div>
+                </form>
+              )}
+            </div>
+          )}
 
           {/* ── Asset upload ─────────────────────────────────── */}
           <div className="card">

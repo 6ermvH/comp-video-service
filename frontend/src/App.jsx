@@ -14,6 +14,7 @@ import LoginPage           from './pages/LoginPage.jsx'
 import AdminStudiesPage    from './pages/AdminStudiesPage.jsx'
 import AdminPairsPage      from './pages/AdminPairsPage.jsx'
 import AdminAnalyticsPage  from './pages/AdminAnalyticsPage.jsx'
+import AdminVideoLibraryPage from './pages/AdminVideoLibraryPage.jsx'
 
 function App() {
   return (
@@ -35,6 +36,7 @@ function App() {
             <Route path="/admin/studies"   element={<AdminStudiesPage />} />
             <Route path="/admin/pairs"     element={<AdminPairsPage />} />
             <Route path="/admin/analytics" element={<AdminAnalyticsPage />} />
+            <Route path="/admin/library"   element={<AdminVideoLibraryPage />} />
           </Route>
 
           {/* ── Fallback ── */}

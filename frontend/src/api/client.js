@@ -183,9 +183,18 @@ export const api = {
   /**
    * POST /admin/assets/upload — multipart fields:
    *   file (mp4), method_type, optional: source_item_id, title, description
+   *   When source_item_id is omitted, video is uploaded to the library unlinked.
    */
   uploadAsset: (formData) =>
     requestMultipart('/admin/assets/upload', formData),
+
+  getAssets: () => request('/admin/assets'),
+
+  createPair: (studyId, body) =>
+    request(`/admin/studies/${studyId}/pairs`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
 
   getSourceItems: (params = {}) => {
     const qs = new URLSearchParams(params).toString()
