@@ -7,20 +7,27 @@ export default function AdminAnalyticsPage() {
   const apiCall = useApiCall()
   const [overview, setOverview] = useState(null)
   const [qcReport, setQcReport] = useState(null)
+  const [studies, setStudies] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [exporting, setExporting] = useState(null) // 'csv' | 'json' | null
+
+  const [selectedStudyId, setSelectedStudyId] = useState(null)
+  const [pairStats, setPairStats] = useState([])
+  const [loadingPairs, setLoadingPairs] = useState(false)
 
   const load = async () => {
     setLoading(true)
     setError(null)
     try {
-      const [ov, qc] = await Promise.allSettled([
+      const [ov, qc, st] = await Promise.allSettled([
         apiCall(() => api.getAnalyticsOverview(), { onRetry: load }),
         apiCall(() => api.getQCReport(), { onRetry: load }),
+        api.getStudies(),
       ])
       if (ov.status === 'fulfilled') setOverview(ov.value)
       if (qc.status === 'fulfilled') setQcReport(qc.value)
+      if (st.status === 'fulfilled') setStudies(st.value?.studies ?? st.value ?? [])
       if (ov.status === 'rejected') setError(ov.reason.message)
     } finally {
       setLoading(false)
@@ -29,6 +36,15 @@ export default function AdminAnalyticsPage() {
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { load() }, [])
+
+  useEffect(() => {
+    if (!selectedStudyId) { setPairStats([]); return }
+    setLoadingPairs(true)
+    api.getAnalyticsPairs(selectedStudyId)
+      .then((data) => setPairStats(Array.isArray(data) ? data : []))
+      .catch(() => setPairStats([]))
+      .finally(() => setLoadingPairs(false))
+  }, [selectedStudyId])
 
   const downloadBlob = (blob, filename) => {
     const url = URL.createObjectURL(blob)
@@ -57,9 +73,10 @@ export default function AdminAnalyticsPage() {
   }
 
   const ov = overview || {}
+
   const winRateData = (ov.effects ?? []).map((e) => ({
     name: e.effect_type,
-    win_rate: e.responses,
+    win_rate: Math.round(e.candidate_win_rate * 100),
   }))
 
   const groupData = (ov.groups ?? []).map((g) => ({
@@ -104,11 +121,12 @@ export default function AdminAnalyticsPage() {
           {/* KPI row */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px' }}>
             {[
-              { label: 'Всего ответов',     value: ov.total_responses ?? '—' },
-              { label: 'Участников',         value: ov.total_participants ?? '—' },
-              { label: 'Пар (source items)', value: ov.total_source_items ?? '—' },
-              { label: 'Win rate (candidate)', value: ov.candidate_win_rate != null ? `${Math.round(ov.candidate_win_rate * 100)}%` : '—' },
-              { label: 'Tie rate',           value: ov.tie_rate != null ? `${Math.round(ov.tie_rate * 100)}%` : '—' },
+              { label: 'Всего ответов',       value: ov.total_responses ?? '—' },
+              { label: 'Участников',           value: ov.total_participants ?? '—' },
+              { label: 'Пар',                  value: ov.total_source_items ?? '—' },
+              { label: 'Candidate win rate',   value: ov.candidate_win_rate != null ? `${Math.round(ov.candidate_win_rate * 100)}%` : '—' },
+              { label: 'Completion rate',      value: ov.completion_rate != null ? `${Math.round(ov.completion_rate * 100)}%` : '—' },
+              { label: 'Tie rate',             value: ov.tie_rate != null ? `${Math.round(ov.tie_rate * 100)}%` : '—' },
             ].map(({ label, value }) => (
               <div key={label} className="card" style={{ padding: '20px', textAlign: 'center' }}>
                 <div style={{ fontSize: '28px', fontWeight: 700, marginBottom: '6px' }}>{value}</div>
@@ -118,10 +136,10 @@ export default function AdminAnalyticsPage() {
           </div>
 
           {/* Charts row */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '16px' }}>
             <div className="card">
               <h2 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '16px' }}>
-                Ответы по типу эффекта
+                Win rate candidate по типу эффекта
               </h2>
               {winRateData.length > 0 ? (
                 <StatsChart
@@ -152,41 +170,60 @@ export default function AdminAnalyticsPage() {
             </div>
           </div>
 
-          {/* Per-study breakdown */}
-          {ov.by_study && Object.keys(ov.by_study).length > 0 && (
-            <div className="card">
-              <h2 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '16px' }}>
-                По исследованиям
-              </h2>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
-                <thead>
-                  <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
-                    {['Исследование', 'Ответы', 'Участники', 'Win rate', 'Tie rate'].map((h) => (
-                      <th key={h} style={{ textAlign: 'left', padding: '8px 12px',
-                        color: 'var(--color-text-muted)', fontWeight: 500 }}>{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {Object.entries(ov.by_study).map(([name, s]) => (
-                    <tr key={name} style={{ borderBottom: '1px solid var(--color-border)' }}>
-                      <td style={{ padding: '10px 12px', fontWeight: 500 }}>{name}</td>
-                      <td style={{ padding: '10px 12px' }}>{s.response_count ?? '—'}</td>
-                      <td style={{ padding: '10px 12px' }}>{s.participant_count ?? '—'}</td>
-                      <td style={{ padding: '10px 12px' }}>
-                        {s.candidate_win_rate != null
-                          ? `${Math.round(s.candidate_win_rate * 100)}%`
-                          : '—'}
-                      </td>
-                      <td style={{ padding: '10px 12px' }}>
-                        {s.tie_rate != null ? `${Math.round(s.tie_rate * 100)}%` : '—'}
-                      </td>
+          {/* Per-pair breakdown */}
+          <div className="card">
+            <h2 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '16px' }}>
+              Статистика по парам
+            </h2>
+            <select
+              value={selectedStudyId ?? ''}
+              onChange={(e) => setSelectedStudyId(e.target.value || null)}
+              className="input"
+              style={{ maxWidth: '300px', marginBottom: '16px' }}
+            >
+              <option value="">— Выбрать исследование —</option>
+              {studies.map((s) => (
+                <option key={s.id} value={s.id}>{s.name}</option>
+              ))}
+            </select>
+
+            {loadingPairs ? (
+              <div style={{ display: 'flex', justifyContent: 'center', padding: '32px' }}>
+                <div className="spinner" />
+              </div>
+            ) : pairStats.length > 0 ? (
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
+                  <thead>
+                    <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
+                      {['Пара', 'Группа', 'Сложность', 'Ответов', 'Candidate wins', 'Baseline wins', 'Tie', 'Win rate'].map((h) => (
+                        <th key={h} style={{ textAlign: 'left', padding: '8px 12px',
+                          color: 'var(--color-text-muted)', fontWeight: 500 }}>{h}</th>
+                      ))}
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+                  </thead>
+                  <tbody>
+                    {pairStats.map((p) => (
+                      <tr key={p.source_item_id} style={{ borderBottom: '1px solid var(--color-border)' }}>
+                        <td style={{ padding: '10px 12px', fontFamily: 'monospace', fontSize: '12px' }}>{p.pair_code ?? '—'}</td>
+                        <td style={{ padding: '10px 12px' }}>{p.group_name}</td>
+                        <td style={{ padding: '10px 12px' }}>{p.difficulty ?? '—'}</td>
+                        <td style={{ padding: '10px 12px' }}>{p.total_responses}</td>
+                        <td style={{ padding: '10px 12px', color: 'var(--color-success)' }}>{p.candidate_wins}</td>
+                        <td style={{ padding: '10px 12px' }}>{p.baseline_wins}</td>
+                        <td style={{ padding: '10px 12px' }}>{p.tie_count}</td>
+                        <td style={{ padding: '10px 12px', fontWeight: 600 }}>
+                          {p.total_responses > 0 ? `${Math.round(p.candidate_win_rate * 100)}%` : '—'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : selectedStudyId ? (
+              <p style={{ fontSize: '14px', color: 'var(--color-text-muted)' }}>Нет данных для выбранного исследования.</p>
+            ) : null}
+          </div>
 
           {/* QC Report */}
           {qcReport && (
@@ -196,10 +233,10 @@ export default function AdminAnalyticsPage() {
               </h2>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '16px', marginBottom: '20px' }}>
                 {[
-                  { label: 'Быстрые ответы', value: qcReport.fast_responses ?? '—', warn: true },
-                  { label: 'Прямолинейные', value: qcReport.straight_lining ?? '—', warn: true },
-                  { label: 'Провал attention', value: qcReport.attention_check_failures ?? '—', warn: true },
-                  { label: 'Помечено suspect', value: qcReport.suspect_count ?? '—', warn: false },
+                  { label: 'Быстрые ответы',    value: qcReport.fast_responses ?? '—',           warn: true },
+                  { label: 'Прямолинейные',       value: qcReport.straight_lining ?? '—',          warn: true },
+                  { label: 'Провал attention',    value: qcReport.attention_check_failures ?? '—', warn: true },
+                  { label: 'Помечено suspect',    value: qcReport.suspect_count ?? '—',            warn: false },
                 ].map(({ label, value, warn }) => (
                   <div key={label} style={{
                     padding: '16px', background: 'var(--color-surface-2)',
@@ -221,30 +258,28 @@ export default function AdminAnalyticsPage() {
                   <h3 style={{ fontSize: '14px', fontWeight: 600, marginBottom: '12px', color: 'var(--color-text-muted)' }}>
                     Подозрительные участники
                   </h3>
-                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
-                    <thead>
-                      <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
-                        {['Participant ID', 'Причина', 'Ответов', 'Ср. время (мс)'].map((h) => (
-                          <th key={h} style={{ textAlign: 'left', padding: '6px 10px',
-                            color: 'var(--color-text-muted)', fontWeight: 500 }}>{h}</th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {qcReport.flagged_participants.map((p) => (
-                        <tr key={p.id} style={{ borderBottom: '1px solid var(--color-border)' }}>
-                          <td style={{ padding: '8px 10px', fontFamily: 'monospace', fontSize: '11px' }}>
-                            {p.id}
-                          </td>
-                          <td style={{ padding: '8px 10px', color: 'var(--color-warning)' }}>
-                            {p.flag_reason}
-                          </td>
-                          <td style={{ padding: '8px 10px' }}>{p.response_count}</td>
-                          <td style={{ padding: '8px 10px' }}>{p.avg_response_ms}</td>
+                  <div style={{ overflowX: 'auto' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                      <thead>
+                        <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
+                          {['Participant ID', 'Причина', 'Ответов', 'Ср. время (мс)'].map((h) => (
+                            <th key={h} style={{ textAlign: 'left', padding: '6px 10px',
+                              color: 'var(--color-text-muted)', fontWeight: 500 }}>{h}</th>
+                          ))}
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody>
+                        {qcReport.flagged_participants.map((p) => (
+                          <tr key={p.id} style={{ borderBottom: '1px solid var(--color-border)' }}>
+                            <td style={{ padding: '8px 10px', fontFamily: 'monospace', fontSize: '11px' }}>{p.id}</td>
+                            <td style={{ padding: '8px 10px', color: 'var(--color-warning)' }}>{p.flag_reason}</td>
+                            <td style={{ padding: '8px 10px' }}>{p.response_count}</td>
+                            <td style={{ padding: '8px 10px' }}>{p.avg_response_ms}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </>
               )}
             </div>

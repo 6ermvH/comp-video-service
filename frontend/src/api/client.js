@@ -194,9 +194,10 @@ export const api = {
 
   // ── Admin: Analytics ─────────────────────────────────────
 
-  getAnalyticsOverview:  ()   => request('/admin/analytics/overview'),
-  getStudyAnalytics:     (id) => request(`/admin/analytics/study/${id}`),
-  getQCReport:           ()   => request('/admin/analytics/qc'),
+  getAnalyticsOverview:  ()         => request('/admin/analytics/overview'),
+  getAnalyticsPairs:     (studyId)  => request(`/admin/analytics/study/${studyId}/pairs`),
+  getStudyAnalytics:     (id)       => request(`/admin/analytics/study/${id}`),
+  getQCReport:           ()         => request('/admin/analytics/qc'),
 
   // ── Admin: Export ─────────────────────────────────────────
 
