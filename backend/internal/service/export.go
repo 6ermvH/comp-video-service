@@ -71,7 +71,7 @@ func (s *ExportService) ExportCSV(ctx context.Context) ([]byte, error) {
 			COALESCE(r.confidence::text, ''),
 			COALESCE(r.response_time_ms::text, ''),
 			r.replay_count,
-			pp.is_attention_check,
+			pp.is_attention_check::text,
 			r.created_at
 		FROM responses r
 		JOIN participants p ON p.id = r.participant_id
@@ -108,7 +108,7 @@ func (s *ExportService) ExportCSV(ctx context.Context) ([]byte, error) {
 			confidence       string
 			responseTimeMS   string
 			replayCount      int
-			isAttentionCheck bool
+			isAttentionCheck string
 			createdAt        time.Time
 		)
 		if err := rows.Scan(
@@ -131,8 +131,8 @@ func (s *ExportService) ExportCSV(ctx context.Context) ([]byte, error) {
 			reasonCodes,
 			confidence,
 			responseTimeMS,
-			strconv.Itoa(replayCount),
-			strconv.FormatBool(isAttentionCheck),
+			fmt.Sprintf("%d", replayCount),
+			isAttentionCheck,
 			createdAt.UTC().Format(time.RFC3339Nano),
 		}
 		if err := writer.Write(rec); err != nil {
