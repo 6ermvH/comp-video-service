@@ -99,6 +99,60 @@
                 }
             }
         },
+        "/admin/analytics/study/{id}/pairs": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Get per-pair analytics for a study",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Study ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/service.PairStat"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/admin/assets/upload": {
             "post": {
                 "security": [
@@ -1280,6 +1334,38 @@
                 },
                 "tie_rate": {
                     "type": "number"
+                }
+            }
+        },
+        "service.PairStat": {
+            "type": "object",
+            "properties": {
+                "baseline_wins": {
+                    "type": "integer"
+                },
+                "candidate_win_rate": {
+                    "type": "number"
+                },
+                "candidate_wins": {
+                    "type": "integer"
+                },
+                "difficulty": {
+                    "type": "string"
+                },
+                "group_name": {
+                    "type": "string"
+                },
+                "pair_code": {
+                    "type": "string"
+                },
+                "source_item_id": {
+                    "type": "string"
+                },
+                "tie_count": {
+                    "type": "integer"
+                },
+                "total_responses": {
+                    "type": "integer"
                 }
             }
         },
