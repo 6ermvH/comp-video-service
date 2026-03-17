@@ -8,7 +8,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 const root = resolve(__dirname, '../..')
 
 // --- Load OpenAPI spec ---
-const specPath = resolve(root, 'backend/docs/openapi.yaml')
+const specPath = resolve(root, 'backend/docs/swagger.yaml')
 let spec
 try {
   spec = parse(readFileSync(specPath, 'utf8'))
