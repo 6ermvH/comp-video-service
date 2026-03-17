@@ -14,7 +14,8 @@ RUN go mod download
 
 # Copy source and build
 COPY . .
-RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o /bin/server ./cmd/server
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o /bin/server ./cmd/server && \
+    CGO_ENABLED=0 GOOS=linux go build -ldflags="-w -s" -o /bin/seed ./cmd/seed
 
 # ─────────────────────────────────────────────────────────────
 # Stage 2 – Runtime
@@ -25,6 +26,7 @@ RUN apk add --no-cache ca-certificates wget
 
 WORKDIR /app
 COPY --from=builder /bin/server ./server
+COPY --from=builder /bin/seed ./seed
 COPY --from=builder /app/migrations /migrations
 
 EXPOSE 8080
