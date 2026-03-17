@@ -184,7 +184,7 @@ export default function TaskPage({ isPractice = false }) {
           <button
             className="btn btn-ghost"
             style={{ width: '100%', marginTop: '8px' }}
-            onClick={handleReplay}
+            onClick={() => playerRef.current?.replay()}
           >
             ↺ Повторить оба видео
           </button>
