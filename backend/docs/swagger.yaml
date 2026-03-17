@@ -173,12 +173,24 @@ definitions:
     required:
     - choice
     type: object
-  model.UpdateStudyStatusRequest:
+  model.UpdateStudyRequest:
     properties:
+      confidence_enabled:
+        type: boolean
+      effect_type:
+        type: string
+      instructions_text:
+        type: string
+      max_tasks_per_participant:
+        type: integer
+      name:
+        type: string
+      reasons_enabled:
+        type: boolean
       status:
         type: string
-    required:
-    - status
+      tie_option_enabled:
+        type: boolean
     type: object
   model.Video:
     properties:
@@ -575,18 +587,19 @@ paths:
     patch:
       consumes:
       - application/json
+      description: Update study status and/or fields
       parameters:
       - description: Study ID
         in: path
         name: id
         required: true
         type: string
-      - description: Status update
+      - description: Update payload
         in: body
         name: body
         required: true
         schema:
-          $ref: '#/definitions/model.UpdateStudyStatusRequest'
+          $ref: '#/definitions/model.UpdateStudyRequest'
       produces:
       - application/json
       responses:
@@ -600,10 +613,16 @@ paths:
             additionalProperties:
               type: string
             type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
       security:
       - BearerAuth: []
       - CSRFToken: []
-      summary: Update study status
+      summary: Update study
       tags:
       - admin
   /admin/studies/{id}/groups:

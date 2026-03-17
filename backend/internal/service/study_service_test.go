@@ -65,6 +65,40 @@ func TestStudyServiceUpdateStatusValidation(t *testing.T) {
 	}
 }
 
+func TestStudyServiceUpdateStudyValidation(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	studyRepo := NewMockstudyRepository(ctrl)
+	svc := NewStudyService(studyRepo, NewMockgroupRepository(ctrl), NewMocksourceItemRepository(ctrl), nil)
+	id := uuid.New()
+
+	badStatus := "bad"
+	if _, err := svc.UpdateStudy(context.Background(), id, &model.UpdateStudyRequest{Status: &badStatus}); err == nil {
+		t.Fatal("expected invalid status error")
+	}
+
+	name := "New name"
+	status := "ACTIVE"
+	studyRepo.EXPECT().Update(gomock.Any(), id, gomock.Any()).DoAndReturn(
+		func(_ context.Context, _ uuid.UUID, req *model.UpdateStudyRequest) (*model.Study, error) {
+			if req.Status == nil || *req.Status != "active" {
+				t.Fatalf("expected normalized status active, got %+v", req.Status)
+			}
+			if req.Name == nil || *req.Name != name {
+				t.Fatalf("expected name to pass through")
+			}
+			return &model.Study{ID: id, Status: "active", Name: name}, nil
+		},
+	)
+	if _, err := svc.UpdateStudy(context.Background(), id, &model.UpdateStudyRequest{
+		Status: &status,
+		Name:   &name,
+	}); err != nil {
+		t.Fatalf("UpdateStudy: %v", err)
+	}
+}
+
 func TestStudyServiceImportSourceItemsCSV(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()

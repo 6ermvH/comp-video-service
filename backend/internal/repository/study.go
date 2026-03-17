@@ -97,6 +97,34 @@ func (r *StudyRepository) UpdateStatus(ctx context.Context, id uuid.UUID, status
 	return scanStudy(row)
 }
 
+// Update applies a partial update to a study.
+func (r *StudyRepository) Update(ctx context.Context, id uuid.UUID, req *model.UpdateStudyRequest) (*model.Study, error) {
+	row := r.db.QueryRow(ctx, `
+		UPDATE studies SET
+			status                    = COALESCE($2, status),
+			name                      = COALESCE($3, name),
+			effect_type               = COALESCE($4, effect_type),
+			max_tasks_per_participant = COALESCE($5, max_tasks_per_participant),
+			instructions_text         = COALESCE($6, instructions_text),
+			tie_option_enabled        = COALESCE($7, tie_option_enabled),
+			reasons_enabled           = COALESCE($8, reasons_enabled),
+			confidence_enabled        = COALESCE($9, confidence_enabled)
+		WHERE id = $1
+		RETURNING id, name, effect_type, status, max_tasks_per_participant,
+			instructions_text, tie_option_enabled, reasons_enabled, confidence_enabled, created_at`,
+		id,
+		req.Status,
+		req.Name,
+		req.EffectType,
+		req.MaxTasksPerParticipant,
+		req.InstructionsText,
+		req.TieOptionEnabled,
+		req.ReasonsEnabled,
+		req.ConfidenceEnabled,
+	)
+	return scanStudy(row)
+}
+
 func scanStudy(row scanner) (*model.Study, error) {
 	var s model.Study
 	err := row.Scan(

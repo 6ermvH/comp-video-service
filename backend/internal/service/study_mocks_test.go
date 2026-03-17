@@ -72,6 +72,21 @@ func (mr *MockstudyRepositoryMockRecorder) List(ctx any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "List", reflect.TypeOf((*MockstudyRepository)(nil).List), ctx)
 }
 
+// Update mocks base method.
+func (m *MockstudyRepository) Update(ctx context.Context, id uuid.UUID, req *model.UpdateStudyRequest) (*model.Study, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Update", ctx, id, req)
+	ret0, _ := ret[0].(*model.Study)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Update indicates an expected call of Update.
+func (mr *MockstudyRepositoryMockRecorder) Update(ctx, id, req any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockstudyRepository)(nil).Update), ctx, id, req)
+}
+
 // UpdateStatus mocks base method.
 func (m *MockstudyRepository) UpdateStatus(ctx context.Context, id uuid.UUID, status string) (*model.Study, error) {
 	m.ctrl.T.Helper()

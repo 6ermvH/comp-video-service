@@ -411,6 +411,7 @@
                         "CSRFToken": []
                     }
                 ],
+                "description": "Update study status and/or fields",
                 "consumes": [
                     "application/json"
                 ],
@@ -420,7 +421,7 @@
                 "tags": [
                     "admin"
                 ],
-                "summary": "Update study status",
+                "summary": "Update study",
                 "parameters": [
                     {
                         "type": "string",
@@ -430,12 +431,12 @@
                         "required": true
                     },
                     {
-                        "description": "Status update",
+                        "description": "Update payload",
                         "name": "body",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/model.UpdateStudyStatusRequest"
+                            "$ref": "#/definitions/model.UpdateStudyRequest"
                         }
                     }
                 ],
@@ -448,6 +449,15 @@
                     },
                     "400": {
                         "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -1111,14 +1121,32 @@
                 }
             }
         },
-        "model.UpdateStudyStatusRequest": {
+        "model.UpdateStudyRequest": {
             "type": "object",
-            "required": [
-                "status"
-            ],
             "properties": {
+                "confidence_enabled": {
+                    "type": "boolean"
+                },
+                "effect_type": {
+                    "type": "string"
+                },
+                "instructions_text": {
+                    "type": "string"
+                },
+                "max_tasks_per_participant": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "reasons_enabled": {
+                    "type": "boolean"
+                },
                 "status": {
                     "type": "string"
+                },
+                "tie_option_enabled": {
+                    "type": "boolean"
                 }
             }
         },
