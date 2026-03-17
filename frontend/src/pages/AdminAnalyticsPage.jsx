@@ -57,17 +57,15 @@ export default function AdminAnalyticsPage() {
   }
 
   const ov = overview || {}
-  const winRateData = ov.by_effect
-    ? Object.entries(ov.by_effect).map(([k, v]) => ({
-        name: k, win_rate: Math.round((v.candidate_wins / (v.total || 1)) * 100),
-      }))
-    : []
+  const winRateData = (ov.effects ?? []).map((e) => ({
+    name: e.effect_type,
+    win_rate: e.responses,
+  }))
 
-  const groupData = ov.by_group
-    ? Object.entries(ov.by_group).map(([k, v]) => ({
-        name: k, responses: v.response_count || 0,
-      }))
-    : []
+  const groupData = (ov.groups ?? []).map((g) => ({
+    name: g.group_name,
+    responses: g.responses,
+  }))
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
@@ -123,7 +121,7 @@ export default function AdminAnalyticsPage() {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
             <div className="card">
               <h2 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '16px' }}>
-                Win rate candidate по типу эффекта
+                Ответы по типу эффекта
               </h2>
               {winRateData.length > 0 ? (
                 <StatsChart
