@@ -10,7 +10,6 @@ import (
 	"github.com/google/uuid"
 
 	"comp-video-service/backend/internal/model"
-	"comp-video-service/backend/internal/repository"
 )
 
 // StudyService provides admin operations around studies/groups/source items.
@@ -18,7 +17,7 @@ type StudyService struct {
 	studyRepo      studyRepository
 	groupRepo      groupRepository
 	sourceItemRepo sourceItemRepository
-	videoRepo      *repository.VideoRepository
+	videoRepo      studyVideoRepository
 }
 
 type studyRepository interface {
@@ -37,13 +36,17 @@ type sourceItemRepository interface {
 	ListWithFilters(ctx context.Context, studyID *uuid.UUID, groupID *uuid.UUID) ([]*model.SourceItem, error)
 }
 
+type studyVideoRepository interface {
+	LinkOrCreate(ctx context.Context, v *model.Video) (*model.Video, error)
+}
+
 //go:generate go run go.uber.org/mock/mockgen -source=study.go -destination=study_mocks_test.go -package=service
 
 func NewStudyService(
 	studyRepo studyRepository,
 	groupRepo groupRepository,
 	sourceItemRepo sourceItemRepository,
-	videoRepo *repository.VideoRepository,
+	videoRepo studyVideoRepository,
 ) *StudyService {
 	return &StudyService{
 		studyRepo:      studyRepo,
@@ -130,7 +133,7 @@ func (s *StudyService) ImportSourceItemsCSV(ctx context.Context, studyID uuid.UU
 		}
 		if baselineKey != "" {
 			sourceItemID := item.ID
-			_, _ = s.videoRepo.Create(ctx, nil, &model.Video{
+			_, _ = s.videoRepo.LinkOrCreate(ctx, &model.Video{
 				SourceItemID: &sourceItemID,
 				MethodType:   nilIfEmpty("baseline"),
 				Title:        strings.TrimSpace(row[2]) + " baseline",
@@ -141,7 +144,7 @@ func (s *StudyService) ImportSourceItemsCSV(ctx context.Context, studyID uuid.UU
 		}
 		if candidateKey != "" {
 			sourceItemID := item.ID
-			_, _ = s.videoRepo.Create(ctx, nil, &model.Video{
+			_, _ = s.videoRepo.LinkOrCreate(ctx, &model.Video{
 				SourceItemID: &sourceItemID,
 				MethodType:   nilIfEmpty("candidate"),
 				Title:        strings.TrimSpace(row[2]) + " candidate",

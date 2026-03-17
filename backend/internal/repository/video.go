@@ -39,6 +39,28 @@ func (r *VideoRepository) Create(ctx context.Context, tx pgxTx, v *model.Video) 
 	return scanVideo(row)
 }
 
+// LinkOrCreate inserts a new video asset or links an existing one by s3_key.
+func (r *VideoRepository) LinkOrCreate(ctx context.Context, v *model.Video) (*model.Video, error) {
+	q := `
+		INSERT INTO video_assets (
+			source_item_id, method_type, title, description, s3_key, duration_ms,
+			status, width, height, fps, codec, checksum
+		)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+		ON CONFLICT (s3_key) DO UPDATE
+			SET source_item_id = EXCLUDED.source_item_id,
+			    method_type    = EXCLUDED.method_type,
+			    updated_at     = now()
+		RETURNING id, source_item_id, method_type, title, description, s3_key, duration_ms,
+			status, width, height, fps, codec, checksum, created_at, updated_at`
+
+	row := r.db.QueryRow(ctx, q,
+		v.SourceItemID, v.MethodType, v.Title, v.Description, v.S3Key, v.DurationMS,
+		v.Status, v.Width, v.Height, v.FPS, v.Codec, v.Checksum,
+	)
+	return scanVideo(row)
+}
+
 // GetByID returns a video asset by UUID.
 func (r *VideoRepository) GetByID(ctx context.Context, id uuid.UUID) (*model.Video, error) {
 	q := `

@@ -194,3 +194,42 @@ func (mr *MocksourceItemRepositoryMockRecorder) ListWithFilters(ctx, studyID, gr
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListWithFilters", reflect.TypeOf((*MocksourceItemRepository)(nil).ListWithFilters), ctx, studyID, groupID)
 }
+
+// MockstudyVideoRepository is a mock of studyVideoRepository interface.
+type MockstudyVideoRepository struct {
+	ctrl     *gomock.Controller
+	recorder *MockstudyVideoRepositoryMockRecorder
+	isgomock struct{}
+}
+
+// MockstudyVideoRepositoryMockRecorder is the mock recorder for MockstudyVideoRepository.
+type MockstudyVideoRepositoryMockRecorder struct {
+	mock *MockstudyVideoRepository
+}
+
+// NewMockstudyVideoRepository creates a new mock instance.
+func NewMockstudyVideoRepository(ctrl *gomock.Controller) *MockstudyVideoRepository {
+	mock := &MockstudyVideoRepository{ctrl: ctrl}
+	mock.recorder = &MockstudyVideoRepositoryMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockstudyVideoRepository) EXPECT() *MockstudyVideoRepositoryMockRecorder {
+	return m.recorder
+}
+
+// LinkOrCreate mocks base method.
+func (m *MockstudyVideoRepository) LinkOrCreate(ctx context.Context, v *model.Video) (*model.Video, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "LinkOrCreate", ctx, v)
+	ret0, _ := ret[0].(*model.Video)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// LinkOrCreate indicates an expected call of LinkOrCreate.
+func (mr *MockstudyVideoRepositoryMockRecorder) LinkOrCreate(ctx, v any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LinkOrCreate", reflect.TypeOf((*MockstudyVideoRepository)(nil).LinkOrCreate), ctx, v)
+}
