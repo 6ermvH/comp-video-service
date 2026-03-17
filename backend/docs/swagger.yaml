@@ -237,6 +237,10 @@ definitions:
     - VideoStatusArchived
   service.AnalyticsOverview:
     properties:
+      candidate_win_rate:
+        type: number
+      completion_rate:
+        type: number
       effects:
         items:
           $ref: '#/definitions/service.EffectAnalytics'
@@ -251,9 +255,13 @@ definitions:
         type: integer
       total_responses:
         type: integer
+      total_source_items:
+        type: integer
     type: object
   service.EffectAnalytics:
     properties:
+      candidate_win_rate:
+        type: number
       effect_type:
         type: string
       responses:
