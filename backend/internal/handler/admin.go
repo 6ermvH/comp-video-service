@@ -384,7 +384,15 @@ func (h *AdminHandler) AnalyticsStudy(c *gin.Context) {
 }
 
 // AnalyticsPairs godoc
-// GET /api/admin/analytics/study/:id/pairs
+// @Summary      Get per-pair analytics for a study
+// @Tags         admin
+// @Produce      json
+// @Security     BearerAuth
+// @Param        id   path      string  true  "Study ID"
+// @Success      200  {array}   service.PairStat
+// @Failure      400  {object}  map[string]string
+// @Failure      500  {object}  map[string]string
+// @Router       /admin/analytics/study/{id}/pairs [get]
 func (h *AdminHandler) AnalyticsPairs(c *gin.Context) {
 	studyID, err := uuid.Parse(c.Param("id"))
 	if err != nil {

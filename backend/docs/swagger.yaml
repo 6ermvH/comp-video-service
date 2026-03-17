@@ -280,6 +280,27 @@ definitions:
       tie_rate:
         type: number
     type: object
+  service.PairStat:
+    properties:
+      baseline_wins:
+        type: integer
+      candidate_win_rate:
+        type: number
+      candidate_wins:
+        type: integer
+      difficulty:
+        type: string
+      group_name:
+        type: string
+      pair_code:
+        type: string
+      source_item_id:
+        type: string
+      tie_count:
+        type: integer
+      total_responses:
+        type: integer
+    type: object
   service.QCReport:
     properties:
       fast_response_threshold_ms:
@@ -406,6 +427,40 @@ paths:
       - BearerAuth: []
       - CSRFToken: []
       summary: Get per-study analytics
+      tags:
+      - admin
+  /admin/analytics/study/{id}/pairs:
+    get:
+      parameters:
+      - description: Study ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/service.PairStat'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get per-pair analytics for a study
       tags:
       - admin
   /admin/assets/upload:
