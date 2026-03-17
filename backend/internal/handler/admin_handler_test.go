@@ -62,6 +62,7 @@ func (m *mockAssetService) Upload(ctx context.Context, in service.AssetUploadInp
 type mockAnalyticsService struct {
 	overviewFn func(context.Context) (*service.AnalyticsOverview, error)
 	studyFn    func(context.Context, uuid.UUID) (*service.StudyAnalytics, error)
+	pairFn     func(context.Context, uuid.UUID) ([]*service.PairStat, error)
 }
 
 func (m *mockAnalyticsService) Overview(ctx context.Context) (*service.AnalyticsOverview, error) {
@@ -69,6 +70,9 @@ func (m *mockAnalyticsService) Overview(ctx context.Context) (*service.Analytics
 }
 func (m *mockAnalyticsService) StudyDetail(ctx context.Context, id uuid.UUID) (*service.StudyAnalytics, error) {
 	return m.studyFn(ctx, id)
+}
+func (m *mockAnalyticsService) PairBreakdown(ctx context.Context, id uuid.UUID) ([]*service.PairStat, error) {
+	return m.pairFn(ctx, id)
 }
 
 type mockQCService struct {
@@ -161,6 +165,9 @@ func TestAdminHandlerAnalyticsAndExport(t *testing.T) {
 			studyFn: func(context.Context, uuid.UUID) (*service.StudyAnalytics, error) {
 				return &service.StudyAnalytics{}, nil
 			},
+			pairFn: func(context.Context, uuid.UUID) ([]*service.PairStat, error) {
+				return []*service.PairStat{}, nil
+			},
 		},
 		&mockQCService{reportFn: func(context.Context) (*service.QCReport, error) { return &service.QCReport{TotalResponses: 1}, nil }},
 		&mockExportService{csvFn: func(context.Context) ([]byte, error) { return []byte("a,b\n"), nil }, jsonFn: func(context.Context) ([]byte, error) { return []byte("[]"), nil }},
@@ -168,11 +175,12 @@ func TestAdminHandlerAnalyticsAndExport(t *testing.T) {
 	r := gin.New()
 	r.GET("/overview", h.AnalyticsOverview)
 	r.GET("/study/:id", h.AnalyticsStudy)
+	r.GET("/study/:id/pairs", h.AnalyticsPairs)
 	r.GET("/qc", h.AnalyticsQC)
 	r.GET("/csv", h.ExportCSV)
 	r.GET("/json", h.ExportJSON)
 
-	cases := []string{"/overview", "/study/" + uuid.New().String(), "/qc", "/csv", "/json"}
+	cases := []string{"/overview", "/study/" + uuid.New().String(), "/study/" + uuid.New().String() + "/pairs", "/qc", "/csv", "/json"}
 	for _, path := range cases {
 		w := httptest.NewRecorder()
 		r.ServeHTTP(w, httptest.NewRequest(http.MethodGet, path, nil))

@@ -135,6 +135,7 @@ func main() {
 
 		adminGroup.GET("/analytics/overview", adminH.AnalyticsOverview)
 		adminGroup.GET("/analytics/study/:id", adminH.AnalyticsStudy)
+		adminGroup.GET("/analytics/study/:id/pairs", adminH.AnalyticsPairs)
 		adminGroup.GET("/analytics/qc", adminH.AnalyticsQC)
 
 		adminGroup.GET("/export/csv", adminH.ExportCSV)
