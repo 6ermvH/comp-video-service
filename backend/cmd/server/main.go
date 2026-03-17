@@ -16,7 +16,10 @@ import (
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/rs/cors"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 
+	_ "comp-video-service/backend/docs"
 	"comp-video-service/backend/internal/config"
 	"comp-video-service/backend/internal/handler"
 	"comp-video-service/backend/internal/middleware"
@@ -25,6 +28,17 @@ import (
 	"comp-video-service/backend/internal/storage"
 )
 
+// @title           Video Comparison Service API
+// @version         1.0
+// @description     Controlled pairwise video comparison platform for flooding/explosion research.
+// @host            localhost:8080
+// @BasePath        /api
+// @securityDefinitions.apikey BearerAuth
+// @in              header
+// @name            Authorization
+// @securityDefinitions.apikey CSRFToken
+// @in              header
+// @name            X-CSRF-Token
 func main() {
 	cfg, err := config.Load()
 	if err != nil {
@@ -97,6 +111,9 @@ func main() {
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
 	})
+	if os.Getenv("GIN_MODE") != gin.ReleaseMode {
+		r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	}
 
 	api := r.Group("/api")
 
