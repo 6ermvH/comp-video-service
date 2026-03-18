@@ -4,7 +4,7 @@ import { useEffect } from 'react'
 
 export default function CompletionPage() {
   const navigate = useNavigate()
-  const { completionCode /*, clearSession */ } = useSession()
+  const { completionCode, clearSession } = useSession()
 
   // If somehow arrived here without a completion code, redirect home
   useEffect(() => {
@@ -13,9 +13,9 @@ export default function CompletionPage() {
     }
   }, [completionCode, navigate])
 
-  // const handleCopy = () => {
-  //   if (completionCode) navigator.clipboard.writeText(completionCode)
-  // }
+  const handleCopy = () => {
+    if (completionCode) navigator.clipboard.writeText(completionCode)
+  }
 
   return (
     <div style={{
