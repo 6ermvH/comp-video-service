@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"strings"
@@ -32,6 +33,7 @@ type AssetService struct {
 
 type assetVideoRepository interface {
 	Create(ctx context.Context, m *model.Video) (*model.Video, error)
+	Delete(ctx context.Context, id uuid.UUID) (bool, error)
 }
 
 type assetStorage interface {
@@ -48,6 +50,12 @@ type videoRepositoryAdapter struct {
 func (a videoRepositoryAdapter) Create(ctx context.Context, m *model.Video) (*model.Video, error) {
 	return a.repo.Create(ctx, nil, m)
 }
+
+func (a videoRepositoryAdapter) Delete(ctx context.Context, id uuid.UUID) (bool, error) {
+	return a.repo.Delete(ctx, id)
+}
+
+var ErrAssetInUse = errors.New("video asset is linked to a pair or referenced in presentations")
 
 func NewAssetService(videoRepo *repository.VideoRepository, s3 assetStorage) *AssetService {
 	return newAssetServiceWithDeps(videoRepositoryAdapter{repo: videoRepo}, s3)
@@ -86,4 +94,15 @@ func (s *AssetService) Upload(ctx context.Context, input AssetUploadInput) (*mod
 		return nil, err
 	}
 	return asset, nil
+}
+
+func (s *AssetService) DeleteAsset(ctx context.Context, id uuid.UUID) error {
+	deleted, err := s.videoRepo.Delete(ctx, id)
+	if err != nil {
+		return err
+	}
+	if !deleted {
+		return ErrAssetInUse
+	}
+	return nil
 }

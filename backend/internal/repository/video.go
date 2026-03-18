@@ -152,6 +152,35 @@ func (r *VideoRepository) ListAll(ctx context.Context) ([]*model.Video, error) {
 	return out, rows.Err()
 }
 
+// Delete removes a video asset.
+// Returns false if blocked: video is still linked to a source_item or referenced in pair_presentations.
+func (r *VideoRepository) Delete(ctx context.Context, id uuid.UUID) (deleted bool, err error) {
+	var sourceItemID *uuid.UUID
+	if err := r.db.QueryRow(ctx,
+		`SELECT source_item_id FROM video_assets WHERE id = $1`, id,
+	).Scan(&sourceItemID); err != nil {
+		return false, fmt.Errorf("find asset: %w", err)
+	}
+	if sourceItemID != nil {
+		return false, nil
+	}
+
+	var count int
+	if err := r.db.QueryRow(ctx,
+		`SELECT COUNT(*) FROM pair_presentations WHERE left_asset_id = $1 OR right_asset_id = $1`, id,
+	).Scan(&count); err != nil {
+		return false, fmt.Errorf("check pair_presentations: %w", err)
+	}
+	if count > 0 {
+		return false, nil
+	}
+
+	if _, err := r.db.Exec(ctx, `DELETE FROM video_assets WHERE id = $1`, id); err != nil {
+		return false, fmt.Errorf("delete video asset: %w", err)
+	}
+	return true, nil
+}
+
 // Archive sets the video asset status to archived.
 func (r *VideoRepository) Archive(ctx context.Context, tx pgxTx, id uuid.UUID) error {
 	_, err := execQuery(r.db, tx,

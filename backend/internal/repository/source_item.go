@@ -91,6 +91,42 @@ func (r *SourceItemRepository) ListWithFilters(ctx context.Context, studyID *uui
 	return out, rows.Err()
 }
 
+// Delete removes a source item and unlinks its video assets (sets source_item_id = NULL).
+// Returns false if the source item has responses — deletion is blocked.
+func (r *SourceItemRepository) Delete(ctx context.Context, id uuid.UUID) (deleted bool, err error) {
+	var count int
+	if err := r.db.QueryRow(ctx, `
+		SELECT COUNT(*) FROM responses r
+		JOIN pair_presentations pp ON pp.id = r.pair_presentation_id
+		WHERE pp.source_item_id = $1`, id,
+	).Scan(&count); err != nil {
+		return false, fmt.Errorf("check responses: %w", err)
+	}
+	if count > 0 {
+		return false, nil
+	}
+
+	if _, err := r.db.Exec(ctx,
+		`UPDATE video_assets SET source_item_id = NULL, updated_at = now() WHERE source_item_id = $1`, id,
+	); err != nil {
+		return false, fmt.Errorf("unlink video assets: %w", err)
+	}
+
+	if _, err := r.db.Exec(ctx,
+		`DELETE FROM pair_presentations WHERE source_item_id = $1`, id,
+	); err != nil {
+		return false, fmt.Errorf("delete pair_presentations: %w", err)
+	}
+
+	if _, err := r.db.Exec(ctx,
+		`DELETE FROM source_items WHERE id = $1`, id,
+	); err != nil {
+		return false, fmt.Errorf("delete source_item: %w", err)
+	}
+
+	return true, nil
+}
+
 // ResponseCountsByStudy returns response counts per source item in a study.
 func (r *SourceItemRepository) ResponseCountsByStudy(ctx context.Context, studyID uuid.UUID) (map[uuid.UUID]int64, error) {
 	rows, err := r.db.Query(ctx, `

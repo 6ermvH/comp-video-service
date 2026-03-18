@@ -27,6 +27,7 @@ type mockStudyService struct {
 	listSourceItemsFn func(context.Context, *uuid.UUID, *uuid.UUID) ([]*model.SourceItem, error)
 	listAssetsFn      func(context.Context) ([]*model.Video, error)
 	createPairFn      func(context.Context, uuid.UUID, *model.CreatePairRequest) (*model.SourceItem, error)
+	deletePairFn      func(context.Context, uuid.UUID) error
 }
 
 func (m *mockStudyService) ListStudies(ctx context.Context) ([]*model.Study, error) {
@@ -53,13 +54,20 @@ func (m *mockStudyService) ListAssets(ctx context.Context) ([]*model.Video, erro
 func (m *mockStudyService) CreatePair(ctx context.Context, id uuid.UUID, req *model.CreatePairRequest) (*model.SourceItem, error) {
 	return m.createPairFn(ctx, id, req)
 }
+func (m *mockStudyService) DeletePair(ctx context.Context, id uuid.UUID) error {
+	return m.deletePairFn(ctx, id)
+}
 
 type mockAssetService struct {
 	uploadFn func(context.Context, service.AssetUploadInput) (*model.Video, error)
+	deleteFn func(context.Context, uuid.UUID) error
 }
 
 func (m *mockAssetService) Upload(ctx context.Context, in service.AssetUploadInput) (*model.Video, error) {
 	return m.uploadFn(ctx, in)
+}
+func (m *mockAssetService) DeleteAsset(ctx context.Context, id uuid.UUID) error {
+	return m.deleteFn(ctx, id)
 }
 
 type mockAnalyticsService struct {
@@ -310,6 +318,88 @@ func TestAdminHandlerListSourceItemsInvalidQueryAndExportErrors(t *testing.T) {
 	r.ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/json", nil))
 	if w.Code != http.StatusInternalServerError {
 		t.Fatalf("expected 500 json error, got %d", w.Code)
+	}
+}
+
+func TestAdminHandlerDeletePairAndAsset(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	pairID := uuid.New()
+	assetID := uuid.New()
+
+	h := NewAdminHandler(
+		&mockStudyService{
+			deletePairFn: func(_ context.Context, id uuid.UUID) error {
+				if id != pairID {
+					t.Fatalf("unexpected pair id: %s", id)
+				}
+				return nil
+			},
+		},
+		&mockAssetService{
+			deleteFn: func(_ context.Context, id uuid.UUID) error {
+				if id != assetID {
+					t.Fatalf("unexpected asset id: %s", id)
+				}
+				return nil
+			},
+		},
+		&mockAnalyticsService{},
+		&mockQCService{},
+		&mockExportService{},
+	)
+
+	r := gin.New()
+	r.DELETE("/source-items/:id", h.DeletePair)
+	r.DELETE("/assets/:id", h.DeleteAsset)
+
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, httptest.NewRequest(http.MethodDelete, "/source-items/"+pairID.String(), nil))
+	if w.Code != http.StatusNoContent {
+		t.Fatalf("expected 204 for delete pair, got %d", w.Code)
+	}
+
+	w = httptest.NewRecorder()
+	r.ServeHTTP(w, httptest.NewRequest(http.MethodDelete, "/assets/"+assetID.String(), nil))
+	if w.Code != http.StatusNoContent {
+		t.Fatalf("expected 204 for delete asset, got %d", w.Code)
+	}
+}
+
+func TestAdminHandlerDeletePairAndAssetConflicts(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	pairID := uuid.New()
+	assetID := uuid.New()
+
+	h := NewAdminHandler(
+		&mockStudyService{
+			deletePairFn: func(context.Context, uuid.UUID) error {
+				return service.ErrPairHasResponses
+			},
+		},
+		&mockAssetService{
+			deleteFn: func(context.Context, uuid.UUID) error {
+				return service.ErrAssetInUse
+			},
+		},
+		&mockAnalyticsService{},
+		&mockQCService{},
+		&mockExportService{},
+	)
+
+	r := gin.New()
+	r.DELETE("/source-items/:id", h.DeletePair)
+	r.DELETE("/assets/:id", h.DeleteAsset)
+
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, httptest.NewRequest(http.MethodDelete, "/source-items/"+pairID.String(), nil))
+	if w.Code != http.StatusConflict {
+		t.Fatalf("expected 409 for delete pair conflict, got %d", w.Code)
+	}
+
+	w = httptest.NewRecorder()
+	r.ServeHTTP(w, httptest.NewRequest(http.MethodDelete, "/assets/"+assetID.String(), nil))
+	if w.Code != http.StatusConflict {
+		t.Fatalf("expected 409 for delete asset conflict, got %d", w.Code)
 	}
 }
 

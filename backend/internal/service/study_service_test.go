@@ -66,6 +66,12 @@ func TestStudyServiceBasicMethodsWithGomock(t *testing.T) {
 	}); err != nil {
 		t.Fatalf("CreatePair: %v", err)
 	}
+
+	pairID := uuid.New()
+	sourceRepo.EXPECT().Delete(gomock.Any(), pairID).Return(true, nil)
+	if err := svc.DeletePair(context.Background(), pairID); err != nil {
+		t.Fatalf("DeletePair: %v", err)
+	}
 }
 
 func TestStudyServiceUpdateStatusValidation(t *testing.T) {
@@ -117,5 +123,20 @@ func TestStudyServiceUpdateStudyValidation(t *testing.T) {
 		Name:   &name,
 	}); err != nil {
 		t.Fatalf("UpdateStudy: %v", err)
+	}
+}
+
+func TestStudyServiceDeletePairBlocked(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	sourceRepo := NewMocksourceItemRepository(ctrl)
+	svc := NewStudyService(NewMockstudyRepository(ctrl), NewMockgroupRepository(ctrl), sourceRepo, nil)
+
+	pairID := uuid.New()
+	sourceRepo.EXPECT().Delete(gomock.Any(), pairID).Return(false, nil)
+	err := svc.DeletePair(context.Background(), pairID)
+	if err == nil || err != ErrPairHasResponses {
+		t.Fatalf("expected ErrPairHasResponses, got %v", err)
 	}
 }
