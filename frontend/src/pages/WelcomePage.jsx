@@ -25,6 +25,8 @@ export default function WelcomePage() {
   const isValid = studyId.trim() && consent
   const introWidth = 'min(620px, 100%)'
   const introFontSize = '16px'
+  const paragraphLineHeight = 1.45
+  const introTextColor = 'rgba(232, 237, 248, 0.9)'
 
   return (
     <div style={{
@@ -42,9 +44,9 @@ export default function WelcomePage() {
             Оценка качества генерации видео
           </h1>
           <p style={{
-            color: 'var(--color-text-muted)',
+            color: introTextColor,
             fontSize: introFontSize,
-            lineHeight: 1.7,
+            lineHeight: paragraphLineHeight,
             textAlign: 'left',
             maxWidth: introWidth,
             margin: '0 auto',
@@ -54,9 +56,9 @@ export default function WelcomePage() {
             Необходимо выбрать лучшее видео в каждой паре.
           </p>
           <p style={{
-            color: 'var(--color-text-muted)',
+            color: introTextColor,
             fontSize: introFontSize,
-            lineHeight: 1.7,
+            lineHeight: paragraphLineHeight,
             textAlign: 'left',
             maxWidth: introWidth,
             margin: '12px auto 0',
@@ -71,8 +73,8 @@ export default function WelcomePage() {
             gap: '12px',
             marginTop: '12px',
             fontSize: introFontSize,
-            lineHeight: 1.7,
-            color: 'var(--color-text-muted)',
+            lineHeight: paragraphLineHeight,
+            color: introTextColor,
             width: introWidth,
             marginLeft: 'auto',
             marginRight: 'auto',
@@ -101,8 +103,8 @@ export default function WelcomePage() {
 
           <label style={{
             display: 'flex', gap: '12px', alignItems: 'flex-start',
-            cursor: 'pointer', fontSize: introFontSize, lineHeight: 1.7,
-            marginTop: '18px',
+            cursor: 'pointer', fontSize: introFontSize, lineHeight: paragraphLineHeight,
+            marginTop: '10px',
           }}>
             <input
               type="checkbox"
@@ -110,7 +112,7 @@ export default function WelcomePage() {
               onChange={(e) => setConsent(e.target.checked)}
               style={{ marginTop: '3px', width: '16px', height: '16px', flexShrink: 0 }}
             />
-            <span style={{ color: 'var(--color-text-muted)' }}>
+            <span style={{ color: introTextColor }}>
               Я ознакомился(-ась) с информацией и согласен(-на) принять участие
               в исследовании.
             </span>
@@ -135,7 +137,7 @@ export default function WelcomePage() {
             disabled={!isValid || loading}
             style={{ padding: '16px', fontSize: '16px', marginTop: '8px', width: '100%' }}
           >
-            {loading ? 'Запуск…' : 'Далее'}
+            Далее
           </button>
         </form>
       </div>

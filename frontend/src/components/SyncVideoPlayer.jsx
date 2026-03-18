@@ -94,7 +94,7 @@ const SyncVideoPlayer = forwardRef(function SyncVideoPlayer(
 
   const videoStyle = {
     width: '100%',
-    aspectRatio: '16/9',
+    height: '100%',
     background: '#000',
     borderRadius: '8px',
     display: 'block',
@@ -113,10 +113,17 @@ const SyncVideoPlayer = forwardRef(function SyncVideoPlayer(
 
   const videosContainerStyle = isMobile
     ? { display: 'flex', flexDirection: 'column', gap: '8px', width: '100%' }
-    : { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0px', flex: '1 1 auto', minHeight: 0 }
+    : {
+        display: 'grid',
+        gridTemplateColumns: '1fr 1fr',
+        gap: '0px',
+        flex: '1 1 auto',
+        minHeight: 0,
+        height: 'clamp(560px, 74vh, 960px)',
+      }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%', height: '100%' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%', height: '100%' }}>
       <div style={videosContainerStyle}>
 
         {/* Left video */}
@@ -187,41 +194,36 @@ const SyncVideoPlayer = forwardRef(function SyncVideoPlayer(
         display: 'grid',
         gridTemplateColumns: isMobile ? '1fr' : '1fr auto 1fr',
         alignItems: 'center',
-        gap: '12px',
+        gap: '8px',
       }}>
         {!isMobile && (
-          <div style={{ textAlign: 'center', color: 'var(--color-text)', fontSize: '17px', fontWeight: 700 }}>
+          <div style={{ textAlign: 'center', color: 'var(--color-text)', fontSize: '15px', fontWeight: 700 }}>
             Вариант A
           </div>
         )}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px' }}>
-          {!bothReady ? (
-            <span style={{ color: 'var(--color-text-muted)', fontSize: '14px' }}>
-              Загрузка видео…
-            </span>
-          ) : (
-            <>
-              <button
-                className="btn btn-ghost"
-                onClick={togglePlayPause}
-                style={{ width: isMobile ? '100%' : '170px', justifyContent: 'center' }}
-              >
-                {playing ? '⏸ Пауза' : '▶ Воспроизвести'}
-              </button>
-              {!isMobile && (
-                <button
-                  className="btn btn-ghost"
-                  onClick={replay}
-                  title="Повторить (R)"
-                >
-                  ↺ Повторить
-                </button>
-              )}
-            </>
+          <button
+            className="btn btn-ghost"
+            onClick={togglePlayPause}
+            disabled={!bothReady}
+            style={{ width: isMobile ? '100%' : '150px', minHeight: '38px', padding: '8px 12px', justifyContent: 'center', fontSize: '14px' }}
+          >
+            {playing ? '⏸ Пауза' : '▶ Воспроизвести'}
+          </button>
+          {!isMobile && (
+            <button
+              className="btn btn-ghost"
+              onClick={replay}
+              disabled={!bothReady}
+              title="Повторить (R)"
+              style={{ width: '150px', minHeight: '38px', padding: '8px 12px', justifyContent: 'center', fontSize: '14px' }}
+            >
+              ↺ Повторить
+            </button>
           )}
         </div>
         {!isMobile && (
-          <div style={{ textAlign: 'center', color: 'var(--color-text)', fontSize: '17px', fontWeight: 700 }}>
+          <div style={{ textAlign: 'center', color: 'var(--color-text)', fontSize: '15px', fontWeight: 700 }}>
             Вариант B
           </div>
         )}
