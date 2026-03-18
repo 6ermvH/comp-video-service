@@ -3,7 +3,6 @@ package handler
 import (
 	"context"
 	"fmt"
-	"io"
 	"mime/multipart"
 	"net/http"
 	"strings"
@@ -21,7 +20,6 @@ type studyService interface {
 	UpdateStudy(ctx context.Context, id uuid.UUID, req *model.UpdateStudyRequest) (*model.Study, error)
 	ListGroups(ctx context.Context, studyID uuid.UUID) ([]*model.Group, error)
 	CreateGroup(ctx context.Context, studyID uuid.UUID, req *model.CreateGroupRequest) (*model.Group, error)
-	ImportSourceItemsCSV(ctx context.Context, studyID uuid.UUID, r io.Reader) (int, error)
 	ListSourceItems(ctx context.Context, studyID *uuid.UUID, groupID *uuid.UUID) ([]*model.SourceItem, error)
 	ListAssets(ctx context.Context) ([]*model.Video, error)
 	CreatePair(ctx context.Context, studyID uuid.UUID, req *model.CreatePairRequest) (*model.SourceItem, error)
@@ -204,42 +202,6 @@ func (h *AdminHandler) ListGroups(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"groups": groups})
-}
-
-// ImportSourceItems godoc
-// @Summary      Import source items from CSV
-// @Tags         admin
-// @Accept       mpfd
-// @Produce      json
-// @Security     BearerAuth
-// @Security     CSRFToken
-// @Param        id    path      string  true  "Study ID"
-// @Param        file  formData  file    true  "CSV file"
-// @Success      200   {object}  map[string]int
-// @Failure      400   {object}  map[string]string
-// @Router       /admin/studies/{id}/import [post]
-func (h *AdminHandler) ImportSourceItems(c *gin.Context) {
-	studyID, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid study id"})
-		return
-	}
-
-	file, _, err := c.Request.FormFile("file")
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "file is required"})
-		return
-	}
-	defer func() {
-		_ = file.Close()
-	}()
-
-	created, err := h.studySvc.ImportSourceItemsCSV(c.Request.Context(), studyID, file)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-	c.JSON(http.StatusOK, gin.H{"created": created})
 }
 
 // UploadAsset godoc

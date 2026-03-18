@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"strings"
 	"testing"
 
 	"github.com/google/uuid"
@@ -118,69 +117,5 @@ func TestStudyServiceUpdateStudyValidation(t *testing.T) {
 		Name:   &name,
 	}); err != nil {
 		t.Fatalf("UpdateStudy: %v", err)
-	}
-}
-
-func TestStudyServiceImportSourceItemsCSV(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	sourceRepo := NewMocksourceItemRepository(ctrl)
-	svc := NewStudyService(NewMockstudyRepository(ctrl), NewMockgroupRepository(ctrl), sourceRepo, nil)
-
-	studyID := uuid.New()
-	groupID := uuid.New()
-	csvData := "group_id,source_image_id,pair_code,difficulty,is_attention_check,notes\n" +
-		groupID.String() + ",img,pair,hard,true,note\n"
-
-	sourceRepo.EXPECT().Create(gomock.Any(), gomock.Any()).DoAndReturn(func(_ context.Context, si *model.SourceItem) (*model.SourceItem, error) {
-		if si.StudyID != studyID || si.GroupID != groupID {
-			t.Fatalf("unexpected source item payload: %+v", si)
-		}
-		return &model.SourceItem{ID: uuid.New()}, nil
-	})
-
-	created, err := svc.ImportSourceItemsCSV(context.Background(), studyID, strings.NewReader(csvData))
-	if err != nil {
-		t.Fatalf("ImportSourceItemsCSV: %v", err)
-	}
-	if created != 1 {
-		t.Fatalf("expected created=1 got %d", created)
-	}
-}
-
-func TestStudyServiceImportSourceItemsCSV_LinksExistingVideos(t *testing.T) {
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
-
-	sourceRepo := NewMocksourceItemRepository(ctrl)
-	videoRepo := NewMockstudyVideoRepository(ctrl)
-	svc := NewStudyService(NewMockstudyRepository(ctrl), NewMockgroupRepository(ctrl), sourceRepo, videoRepo)
-
-	studyID := uuid.New()
-	groupID := uuid.New()
-	sourceItemID := uuid.New()
-	csvData := "group_id,source_image_id,pair_code,difficulty,is_attention_check,notes,baseline_s3_key,candidate_s3_key\n" +
-		groupID.String() + ",img,pair,hard,false,note,s3://baseline.mp4,s3://candidate.mp4\n"
-
-	sourceRepo.EXPECT().Create(gomock.Any(), gomock.Any()).Return(&model.SourceItem{ID: sourceItemID}, nil)
-	videoRepo.EXPECT().LinkOrCreate(gomock.Any(), gomock.Any()).Times(2).DoAndReturn(
-		func(_ context.Context, v *model.Video) (*model.Video, error) {
-			if v.SourceItemID == nil || *v.SourceItemID != sourceItemID {
-				t.Fatalf("source item id not linked: %+v", v.SourceItemID)
-			}
-			if v.MethodType == nil {
-				t.Fatalf("method type is nil")
-			}
-			return v, nil
-		},
-	)
-
-	created, err := svc.ImportSourceItemsCSV(context.Background(), studyID, strings.NewReader(csvData))
-	if err != nil {
-		t.Fatalf("ImportSourceItemsCSV: %v", err)
-	}
-	if created != 1 {
-		t.Fatalf("expected created=1 got %d", created)
 	}
 }

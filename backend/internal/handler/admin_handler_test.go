@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"io"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
@@ -25,7 +24,6 @@ type mockStudyService struct {
 	updateStudyFn     func(context.Context, uuid.UUID, *model.UpdateStudyRequest) (*model.Study, error)
 	listGroupsFn      func(context.Context, uuid.UUID) ([]*model.Group, error)
 	createGroupFn     func(context.Context, uuid.UUID, *model.CreateGroupRequest) (*model.Group, error)
-	importCSVFn       func(context.Context, uuid.UUID, io.Reader) (int, error)
 	listSourceItemsFn func(context.Context, *uuid.UUID, *uuid.UUID) ([]*model.SourceItem, error)
 	listAssetsFn      func(context.Context) ([]*model.Video, error)
 	createPairFn      func(context.Context, uuid.UUID, *model.CreatePairRequest) (*model.SourceItem, error)
@@ -45,9 +43,6 @@ func (m *mockStudyService) ListGroups(ctx context.Context, id uuid.UUID) ([]*mod
 }
 func (m *mockStudyService) CreateGroup(ctx context.Context, id uuid.UUID, r *model.CreateGroupRequest) (*model.Group, error) {
 	return m.createGroupFn(ctx, id, r)
-}
-func (m *mockStudyService) ImportSourceItemsCSV(ctx context.Context, id uuid.UUID, r io.Reader) (int, error) {
-	return m.importCSVFn(ctx, id, r)
 }
 func (m *mockStudyService) ListSourceItems(ctx context.Context, sid *uuid.UUID, gid *uuid.UUID) ([]*model.SourceItem, error) {
 	return m.listSourceItemsFn(ctx, sid, gid)
@@ -195,19 +190,6 @@ func TestAdminHandlerAnalyticsAndExport(t *testing.T) {
 		if w.Code != http.StatusOK {
 			t.Fatalf("path %s: expected 200, got %d", path, w.Code)
 		}
-	}
-}
-
-func TestAdminHandlerImportSourceItemsNoFile(t *testing.T) {
-	gin.SetMode(gin.TestMode)
-	h := NewAdminHandler(&mockStudyService{}, &mockAssetService{}, &mockAnalyticsService{}, &mockQCService{}, &mockExportService{})
-	r := gin.New()
-	r.POST("/studies/:id/import", h.ImportSourceItems)
-
-	w := httptest.NewRecorder()
-	r.ServeHTTP(w, httptest.NewRequest(http.MethodPost, "/studies/"+uuid.New().String()+"/import", nil))
-	if w.Code != http.StatusBadRequest {
-		t.Fatalf("expected 400, got %d", w.Code)
 	}
 }
 

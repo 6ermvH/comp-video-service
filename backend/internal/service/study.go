@@ -2,9 +2,7 @@ package service
 
 import (
 	"context"
-	"encoding/csv"
 	"fmt"
-	"io"
 	"strings"
 
 	"github.com/google/uuid"
@@ -125,76 +123,4 @@ func (s *StudyService) CreatePair(ctx context.Context, studyID uuid.UUID, req *m
 		return nil, fmt.Errorf("link candidate: %w", err)
 	}
 	return item, nil
-}
-
-// ImportSourceItemsCSV imports source-items with optional asset keys.
-// Columns:
-// group_id,source_image_id,pair_code,difficulty,is_attention_check,notes,baseline_s3_key,candidate_s3_key
-func (s *StudyService) ImportSourceItemsCSV(ctx context.Context, studyID uuid.UUID, r io.Reader) (int, error) {
-	reader := csv.NewReader(r)
-	records, err := reader.ReadAll()
-	if err != nil {
-		return 0, fmt.Errorf("read csv: %w", err)
-	}
-	if len(records) <= 1 {
-		return 0, nil
-	}
-
-	created := 0
-	for i := 1; i < len(records); i++ {
-		row := records[i]
-		if len(row) < 6 {
-			continue
-		}
-		groupID, err := uuid.Parse(strings.TrimSpace(row[0]))
-		if err != nil {
-			continue
-		}
-		attention := strings.EqualFold(strings.TrimSpace(row[4]), "true") || strings.TrimSpace(row[4]) == "1"
-		item, err := s.sourceItemRepo.Create(ctx, &model.SourceItem{
-			StudyID:          studyID,
-			GroupID:          groupID,
-			SourceImageID:    nilIfEmpty(strings.TrimSpace(row[1])),
-			PairCode:         nilIfEmpty(strings.TrimSpace(row[2])),
-			Difficulty:       nilIfEmpty(strings.TrimSpace(row[3])),
-			IsAttentionCheck: attention,
-			Notes:            nilIfEmpty(strings.TrimSpace(row[5])),
-		})
-		if err != nil {
-			continue
-		}
-
-		// Optional columns with pre-uploaded object keys.
-		var baselineKey, candidateKey string
-		if len(row) > 6 {
-			baselineKey = strings.TrimSpace(row[6])
-		}
-		if len(row) > 7 {
-			candidateKey = strings.TrimSpace(row[7])
-		}
-		if baselineKey != "" {
-			sourceItemID := item.ID
-			_, _ = s.videoRepo.LinkOrCreate(ctx, &model.Video{
-				SourceItemID: &sourceItemID,
-				MethodType:   nilIfEmpty("baseline"),
-				Title:        strings.TrimSpace(row[2]) + " baseline",
-				Description:  nilIfEmpty("imported from CSV"),
-				S3Key:        baselineKey,
-				Status:       model.VideoStatusActive,
-			})
-		}
-		if candidateKey != "" {
-			sourceItemID := item.ID
-			_, _ = s.videoRepo.LinkOrCreate(ctx, &model.Video{
-				SourceItemID: &sourceItemID,
-				MethodType:   nilIfEmpty("candidate"),
-				Title:        strings.TrimSpace(row[2]) + " candidate",
-				Description:  nilIfEmpty("imported from CSV"),
-				S3Key:        candidateKey,
-				Status:       model.VideoStatusActive,
-			})
-		}
-		created++
-	}
-	return created, nil
 }
