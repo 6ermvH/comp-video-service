@@ -507,6 +507,15 @@ paths:
       - admin
   /admin/assets:
     get:
+      parameters:
+      - description: Page number (default 1)
+        in: query
+        name: page
+        type: integer
+      - description: Items per page (default 20, max 100)
+        in: query
+        name: per_page
+        type: integer
       produces:
       - application/json
       responses:
@@ -523,7 +532,7 @@ paths:
             type: object
       security:
       - BearerAuth: []
-      summary: List all video assets
+      summary: List video assets (paginated)
       tags:
       - admin
   /admin/assets/{id}:
@@ -563,6 +572,29 @@ paths:
       - BearerAuth: []
       - CSRFToken: []
       summary: Delete a video asset
+      tags:
+      - admin
+  /admin/assets/free:
+    get:
+      description: Returns all video assets not linked to any pair, for use in pair
+        builder.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: List free (unlinked) video assets
       tags:
       - admin
   /admin/assets/upload:

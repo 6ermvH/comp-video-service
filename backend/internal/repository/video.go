@@ -152,6 +152,68 @@ func (r *VideoRepository) ListAll(ctx context.Context) ([]*model.Video, error) {
 	return out, rows.Err()
 }
 
+// ListPaged returns a page of video assets and the total count.
+func (r *VideoRepository) ListPaged(ctx context.Context, page, perPage int) ([]*model.Video, int, error) {
+	var total int
+	if err := r.db.QueryRow(ctx, `SELECT COUNT(*) FROM video_assets`).Scan(&total); err != nil {
+		return nil, 0, fmt.Errorf("count videos: %w", err)
+	}
+
+	offset := (page - 1) * perPage
+	q := `
+		SELECT id, source_item_id, method_type, title, description, s3_key, duration_ms,
+			status, width, height, fps, codec, checksum, created_at, updated_at
+		FROM video_assets
+		ORDER BY created_at DESC
+		LIMIT $1 OFFSET $2`
+	rows, err := r.db.Query(ctx, q, perPage, offset)
+	if err != nil {
+		return nil, 0, fmt.Errorf("list paged videos: %w", err)
+	}
+	defer rows.Close()
+
+	var out []*model.Video
+	for rows.Next() {
+		v, err := scanVideo(rows)
+		if err != nil {
+			return nil, 0, err
+		}
+		out = append(out, v)
+	}
+	if out == nil {
+		out = make([]*model.Video, 0)
+	}
+	return out, total, rows.Err()
+}
+
+// ListFree returns all video assets not linked to any source_item (free for pairing).
+func (r *VideoRepository) ListFree(ctx context.Context) ([]*model.Video, error) {
+	q := `
+		SELECT id, source_item_id, method_type, title, description, s3_key, duration_ms,
+			status, width, height, fps, codec, checksum, created_at, updated_at
+		FROM video_assets
+		WHERE source_item_id IS NULL
+		ORDER BY method_type, title`
+	rows, err := r.db.Query(ctx, q)
+	if err != nil {
+		return nil, fmt.Errorf("list free videos: %w", err)
+	}
+	defer rows.Close()
+
+	var out []*model.Video
+	for rows.Next() {
+		v, err := scanVideo(rows)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, v)
+	}
+	if out == nil {
+		out = make([]*model.Video, 0)
+	}
+	return out, rows.Err()
+}
+
 // Delete removes a video asset.
 // Returns false if blocked: video is still linked to a source_item or referenced in pair_presentations.
 func (r *VideoRepository) Delete(ctx context.Context, id uuid.UUID) (deleted bool, err error) {

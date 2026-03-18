@@ -41,6 +41,8 @@ type studyVideoRepository interface {
 	LinkOrCreate(ctx context.Context, v *model.Video) (*model.Video, error)
 	Link(ctx context.Context, videoID uuid.UUID, sourceItemID uuid.UUID, methodType string) error
 	ListAll(ctx context.Context) ([]*model.Video, error)
+	ListPaged(ctx context.Context, page, perPage int) ([]*model.Video, int, error)
+	ListFree(ctx context.Context) ([]*model.Video, error)
 }
 
 var ErrPairHasResponses = errors.New("pair has participant responses and cannot be deleted")
@@ -104,8 +106,12 @@ func (s *StudyService) ListSourceItems(ctx context.Context, studyID *uuid.UUID, 
 	return s.sourceItemRepo.ListWithFilters(ctx, studyID, groupID)
 }
 
-func (s *StudyService) ListAssets(ctx context.Context) ([]*model.Video, error) {
-	return s.videoRepo.ListAll(ctx)
+func (s *StudyService) ListAssets(ctx context.Context, page, perPage int) ([]*model.Video, int, error) {
+	return s.videoRepo.ListPaged(ctx, page, perPage)
+}
+
+func (s *StudyService) ListFreeAssets(ctx context.Context) ([]*model.Video, error) {
+	return s.videoRepo.ListFree(ctx)
 }
 
 func (s *StudyService) CreatePair(ctx context.Context, studyID uuid.UUID, req *model.CreatePairRequest) (*model.SourceItem, error) {
