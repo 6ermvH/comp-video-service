@@ -12,7 +12,7 @@ const LABELS = {
 export default function ConfidenceRating({ value, onChange, disabled }) {
   return (
     <div>
-      <p style={{ fontSize: '12px', color: 'var(--color-text-muted)', marginBottom: '6px' }}>
+      <p style={{ fontSize: '12px', color: 'var(--color-text-muted)', marginBottom: '4px' }}>
         Уверенность (необязательно):
       </p>
       <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
@@ -43,11 +43,6 @@ export default function ConfidenceRating({ value, onChange, disabled }) {
             </button>
           )
         })}
-        {value && (
-          <span style={{ fontSize: '12px', color: 'var(--color-text-muted)', marginLeft: '6px' }}>
-            {LABELS[value]}
-          </span>
-        )}
       </div>
     </div>
   )

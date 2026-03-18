@@ -119,7 +119,7 @@ const SyncVideoPlayer = forwardRef(function SyncVideoPlayer(
         gap: '0px',
         flex: '1 1 auto',
         minHeight: 0,
-        height: 'clamp(560px, 74vh, 960px)',
+        height: 'clamp(480px, 68vh, 900px)',
       }
 
   return (
@@ -206,7 +206,7 @@ const SyncVideoPlayer = forwardRef(function SyncVideoPlayer(
             className="btn btn-ghost"
             onClick={togglePlayPause}
             disabled={!bothReady}
-            style={{ width: isMobile ? '100%' : '150px', minHeight: '38px', padding: '8px 12px', justifyContent: 'center', fontSize: '14px' }}
+            style={{ width: isMobile ? '100%' : '150px', height: '38px', padding: '8px 12px', justifyContent: 'center', fontSize: '14px', lineHeight: 1 }}
           >
             {playing ? '⏸ Пауза' : '▶ Воспроизвести'}
           </button>

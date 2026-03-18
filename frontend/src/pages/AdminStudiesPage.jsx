@@ -22,6 +22,20 @@ const STATUS_LABELS = {
 
 const EFFECT_TYPES = ['flooding', 'explosion', 'mixed']
 
+const DEFAULT_INSTRUCTIONS = `Будут представлены видео А и B, выберите лучшее видео в целом.
+
+Обращайте внимание на следующие факторы:
+  • реализм
+  • стабильность (плавность и согласованность движения)
+  • отсутствие артефактов
+  • общая визуальная целостность (одна связная сцена)
+
+Если затрудняетесь определить лучшее видео, выберите «Затрудняюсь ответить»
+
+Вы можете повторить просмотр неограниченное количество раз. Пожалуйста, не спешите — качество ваших оценок важнее скорости.
+
+После подтверждения выбора и перехода к следующей паре видео, вы не сможете вернуться назад и изменить свой выбор.`
+
 export default function AdminStudiesPage() {
   const apiCall = useApiCall()
   const [studies, setStudies] = useState([])
@@ -164,6 +178,18 @@ export default function AdminStudiesPage() {
                 value={form.instructions_text}
                 onChange={(e) => setForm({ ...form, instructions_text: e.target.value })}
                 style={{ resize: 'vertical' }} />
+              <details style={{ marginTop: '6px' }}>
+                <summary style={{ fontSize: '12px', color: 'var(--color-text-muted)', cursor: 'pointer', userSelect: 'none' }}>
+                  Инструкция по умолчанию ↓
+                </summary>
+                <pre style={{
+                  marginTop: '8px', padding: '12px', fontSize: '12px', lineHeight: 1.6,
+                  background: 'var(--color-surface-2)', border: '1px solid var(--color-border)',
+                  borderRadius: 'var(--radius-sm)', whiteSpace: 'pre-wrap', color: 'var(--color-text-muted)',
+                }}>
+                  {DEFAULT_INSTRUCTIONS}
+                </pre>
+              </details>
             </div>
 
             <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap' }}>
@@ -306,9 +332,22 @@ export default function AdminStudiesPage() {
               <div>
                 <label className="label">Текст инструкций</label>
                 <textarea className="input" rows={4}
+                  placeholder="Оставьте пустым для стандартных инструкций"
                   value={editForm.instructions_text}
                   onChange={(e) => setEditForm({ ...editForm, instructions_text: e.target.value })}
                   style={{ resize: 'vertical' }} />
+                <details style={{ marginTop: '6px' }}>
+                  <summary style={{ fontSize: '12px', color: 'var(--color-text-muted)', cursor: 'pointer', userSelect: 'none' }}>
+                    Инструкция по умолчанию ↓
+                  </summary>
+                  <pre style={{
+                    marginTop: '8px', padding: '12px', fontSize: '12px', lineHeight: 1.6,
+                    background: 'var(--color-surface-2)', border: '1px solid var(--color-border)',
+                    borderRadius: 'var(--radius-sm)', whiteSpace: 'pre-wrap', color: 'var(--color-text-muted)',
+                  }}>
+                    {DEFAULT_INSTRUCTIONS}
+                  </pre>
+                </details>
               </div>
 
               <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap' }}>

@@ -4,6 +4,8 @@ import { useSession } from '../context/SessionContext.jsx'
 import { useToast } from '../context/ToastContext.jsx'
 import SyncVideoPlayer from '../components/SyncVideoPlayer.jsx'
 import ChoicePanel from '../components/ChoicePanel.jsx'
+import ReasonsSelector from '../components/ReasonsSelector.jsx'
+import ConfidenceRating from '../components/ConfidenceRating.jsx'
 import ProgressBar from '../components/ProgressBar.jsx'
 import { useWindowWidth } from '../hooks/useWindowWidth.js'
 
@@ -140,7 +142,11 @@ export default function TaskPage({ isPractice = false }) {
     )
   }
 
-  const tieEnabled = studyMeta?.tie_option_enabled ?? true
+  const tieEnabled          = studyMeta?.tie_option_enabled ?? true
+  const showReasons         = studyMeta?.reasons_enabled    ?? true
+  const showConfidence      = studyMeta?.confidence_enabled ?? true
+  const hasDetailedFeedback = choice && choice !== 'tie'
+  const hasDetailedPanels   = hasDetailedFeedback && (showReasons || showConfidence)
 
   return (
     <div style={{
@@ -198,8 +204,8 @@ export default function TaskPage({ isPractice = false }) {
       }}>
 
         <div style={{ textAlign: 'center' }}>
-          <p style={{ fontSize: '13px', color: 'var(--color-text-muted)', marginBottom: '8px', whiteSpace: 'pre-line', lineHeight: 1.5 }}>
-            {'Какое видео выглядит лучше в целом ?\nОриентируйтесь на правдоподобие эффекта, стабильность, отсутствие артефактов и общую визуальную целостность.'}
+          <p style={{ fontSize: '13px', color: 'var(--color-text-muted)', marginBottom: '8px' }}>
+            Какое видео выглядит лучше в целом?
           </p>
           <div style={{
             display: 'flex',
@@ -220,10 +226,42 @@ export default function TaskPage({ isPractice = false }) {
               disabled={!choice || submitting}
               style={{ minWidth: '140px', padding: '10px 18px' }}
             >
-              Следующее
+              {submitting ? 'Отправка…' : 'Следующее'}
             </button>
           </div>
         </div>
+
+        {hasDetailedPanels && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: '20px',
+            flexWrap: 'wrap',
+          }}>
+            {showReasons && hasDetailedFeedback && (
+              <ReasonsSelector
+                selected={reasons}
+                onChange={setReasons}
+                disabled={submitting}
+              />
+            )}
+            {showConfidence && hasDetailedFeedback && (
+              <ConfidenceRating
+                value={confidence}
+                onChange={setConfidence}
+                disabled={submitting}
+              />
+            )}
+            <button
+              className="btn btn-primary"
+              onClick={handleSubmit}
+              disabled={!choice || submitting}
+              style={{ minWidth: '140px', padding: '10px 18px', marginLeft: 'auto', alignSelf: 'flex-end' }}
+            >
+              {submitting ? 'Отправка…' : 'Следующее'}
+            </button>
+          </div>
+        )}
 
         {currentTask.is_practice && (
           <div style={{
