@@ -526,6 +526,45 @@ paths:
       summary: List all video assets
       tags:
       - admin
+  /admin/assets/{id}:
+    delete:
+      description: Deletes a free video asset. Blocked if still linked to a pair or
+        used in presentations.
+      parameters:
+      - description: Asset UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "409":
+          description: Conflict
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      - CSRFToken: []
+      summary: Delete a video asset
+      tags:
+      - admin
   /admin/assets/upload:
     post:
       consumes:
@@ -662,6 +701,45 @@ paths:
       - BearerAuth: []
       - CSRFToken: []
       summary: List source items (pairs)
+      tags:
+      - admin
+  /admin/source-items/{id}:
+    delete:
+      description: Deletes a pair and frees its video assets back to the library.
+        Blocked if responses exist.
+      parameters:
+      - description: Source item UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "409":
+          description: Conflict
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      - CSRFToken: []
+      summary: Delete a source item (pair)
       tags:
       - admin
   /admin/studies:
