@@ -5,6 +5,9 @@ export default function InstructionsPage() {
   const navigate = useNavigate()
   const { sessionToken, studyMeta } = useSession()
   const instructionsText = studyMeta?.instructions_text || ''
+  const bulletStyle = { marginBottom: '14px', lineHeight: 1.45 }
+  const nestedBulletStyle = { marginBottom: '6px', lineHeight: 1.35 }
+  const instructionsTextColor = 'rgba(232, 237, 248, 0.9)'
 
   // Guard: if no session, redirect to welcome
   if (!sessionToken) {
@@ -28,27 +31,27 @@ export default function InstructionsPage() {
         </h1>
 
         {instructionsText ? (
-          <div className="card" style={{ marginBottom: '24px', whiteSpace: 'pre-line', lineHeight: 1.8 }}>
+          <div className="card" style={{ marginBottom: '24px', whiteSpace: 'pre-line', lineHeight: 1.8, color: instructionsTextColor }}>
             {instructionsText}
           </div>
         ) : (
           <div className="card" style={{ marginBottom: '24px' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <section>
-                <ul style={{ paddingLeft: '20px', color: 'var(--color-text-muted)', lineHeight: 2 }}>
-                  <li>Будут представлены видео А и B, выберите лучшее видео в целом.</li>
-                  <li>
+                <ul style={{ paddingLeft: '20px', color: instructionsTextColor, margin: 0 }}>
+                  <li style={bulletStyle}>Будут представлены видео А и B, выберите лучшее видео в целом.</li>
+                  <li style={bulletStyle}>
                     Обращайте внимание на следующие факторы:
-                    <ul style={{ marginTop: '4px', paddingLeft: '22px', lineHeight: 1.9 }}>
-                      <li>реализм</li>
-                      <li>стабильность (плавность и согласованность движения)</li>
-                      <li>отсутствие артефактов</li>
-                      <li>общая визуальная целостность (видео выглядит как одна связная сцена)</li>
+                    <ul style={{ marginTop: '4px', marginBottom: 0, paddingLeft: '22px' }}>
+                      <li style={nestedBulletStyle}>реализм</li>
+                      <li style={nestedBulletStyle}>стабильность (плавность и согласованность движения)</li>
+                      <li style={nestedBulletStyle}>отсутствие артефактов</li>
+                      <li style={{ ...nestedBulletStyle, marginBottom: 0 }}>общая визуальная целостность (одна связная сцена)</li>
                     </ul>
                   </li>
-                  <li>Если затрудняетесь определить лучшее видео, выберите «<strong>Затрудняюсь ответить</strong>»</li>
-                  <li>Вы можете повторить просмотр неограниченное количество раз. Пожалуйста, не спешите — качество ваших оценок важнее скорости.</li>
-                  <li>После подтверждения выбора и перехода к следующей паре видео, вы не сможете вернуться назад и изменить свой выбор.</li>
+                  <li style={bulletStyle}>Если затрудняетесь определить лучшее видео, выберите «Затрудняюсь ответить»</li>
+                  <li style={bulletStyle}>Вы можете повторить просмотр неограниченное количество раз. Пожалуйста, не спешите — качество ваших оценок важнее скорости.</li>
+                  <li style={{ ...bulletStyle, marginBottom: 0 }}>После подтверждения выбора и перехода к следующей паре видео, вы не сможете вернуться назад и изменить свой выбор.</li>
                 </ul>
               </section>
 
