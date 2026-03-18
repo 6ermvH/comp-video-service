@@ -15,8 +15,8 @@ export default function AdminVideoLibraryPage() {
   const [successMsg, setSuccessMsg] = useState(null)
 
   // Upload form state
-  const [file, setFile] = useState(null)
-  const [meta, setMeta] = useState({ method_type: 'baseline', title: '' })
+  const [baselineFile, setBaselineFile] = useState(null)
+  const [candidateFile, setCandidateFile] = useState(null)
   const [uploading, setUploading] = useState(false)
 
   const load = async () => {
@@ -36,18 +36,27 @@ export default function AdminVideoLibraryPage() {
 
   const handleUpload = async (e) => {
     e.preventDefault()
-    if (!file) return
-    const fd = new FormData()
-    fd.append('file', file)
-    fd.append('method_type', meta.method_type)
-    if (meta.title) fd.append('title', meta.title)
+    if (!baselineFile || !candidateFile) return
     setUploading(true)
     setError(null)
     try {
-      await apiCall(() => api.uploadAsset(fd))
-      setSuccessMsg('Видео загружено в библиотеку')
-      setFile(null)
-      setMeta({ method_type: 'baseline', title: '' })
+      if (baselineFile) {
+        const fd = new FormData()
+        fd.append('file', baselineFile)
+        fd.append('method_type', 'baseline')
+        fd.append('title', baselineFile.name.replace(/\.[^.]+$/, ''))
+        await apiCall(() => api.uploadAsset(fd))
+      }
+      if (candidateFile) {
+        const fd = new FormData()
+        fd.append('file', candidateFile)
+        fd.append('method_type', 'candidate')
+        fd.append('title', candidateFile.name.replace(/\.[^.]+$/, ''))
+        await apiCall(() => api.uploadAsset(fd))
+      }
+      setSuccessMsg('Baseline и candidate загружены')
+      setBaselineFile(null)
+      setCandidateFile(null)
       e.target.reset()
       load()
     } catch (err) {
@@ -78,31 +87,42 @@ export default function AdminVideoLibraryPage() {
       {/* Upload form */}
       <div className="card">
         <h2 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '16px' }}>
-          Загрузить видео в библиотеку
+          Загрузить видео
         </h2>
-        <form onSubmit={handleUpload} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
-            <div>
-              <label className="label">Тип</label>
-              <select className="input" value={meta.method_type}
-                onChange={(e) => setMeta({ ...meta, method_type: e.target.value })}>
-                <option value="baseline">baseline</option>
-                <option value="candidate">candidate</option>
-              </select>
+        <form onSubmit={handleUpload} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+            <div style={{ padding: '16px', border: '1px solid rgba(108,99,255,0.3)',
+              borderRadius: 'var(--radius-sm)', background: 'rgba(108,99,255,0.05)' }}>
+              <div style={{ fontSize: '13px', fontWeight: 600, color: '#a78bfa', marginBottom: '10px' }}>
+                Baseline
+              </div>
+              <input type="file" accept="video/mp4"
+                onChange={(e) => setBaselineFile(e.target.files[0])} />
+              {baselineFile && (
+                <div style={{ fontSize: '12px', color: 'var(--color-text-muted)', marginTop: '6px' }}>
+                  {baselineFile.name}
+                </div>
+              )}
             </div>
-            <div>
-              <label className="label">Название (необязательно)</label>
-              <input className="input" value={meta.title} placeholder="Будет сгенерировано из имени файла"
-                onChange={(e) => setMeta({ ...meta, title: e.target.value })} />
+
+            <div style={{ padding: '16px', border: '1px solid rgba(67,217,139,0.3)',
+              borderRadius: 'var(--radius-sm)', background: 'rgba(67,217,139,0.05)' }}>
+              <div style={{ fontSize: '13px', fontWeight: 600, color: '#43d98b', marginBottom: '10px' }}>
+                Candidate
+              </div>
+              <input type="file" accept="video/mp4"
+                onChange={(e) => setCandidateFile(e.target.files[0])} />
+              {candidateFile && (
+                <div style={{ fontSize: '12px', color: 'var(--color-text-muted)', marginTop: '6px' }}>
+                  {candidateFile.name}
+                </div>
+              )}
             </div>
           </div>
-          <div>
-            <label className="label">Файл MP4 *</label>
-            <input type="file" accept="video/mp4" required
-              onChange={(e) => setFile(e.target.files[0])} />
-          </div>
+
           <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-            <button type="submit" className="btn btn-primary" disabled={uploading || !file}>
+            <button type="submit" className="btn btn-primary"
+              disabled={uploading || !baselineFile || !candidateFile}>
               {uploading ? 'Загрузка…' : '⬆ Загрузить'}
             </button>
           </div>
