@@ -15,8 +15,10 @@ export default function AdminVideoLibraryPage() {
   const [successMsg, setSuccessMsg] = useState(null)
 
   // Upload form state
-  const [baselineFile, setBaselineFile] = useState(null)
-  const [candidateFile, setCandidateFile] = useState(null)
+  const [baselineFile, setBaselineFile]   = useState(null)
+  const [baselineTitle, setBaselineTitle] = useState('')
+  const [candidateFile, setCandidateFile]   = useState(null)
+  const [candidateTitle, setCandidateTitle] = useState('')
   const [uploading, setUploading] = useState(false)
 
   const load = async () => {
@@ -34,6 +36,21 @@ export default function AdminVideoLibraryPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { load() }, [])
 
+  const handleDeleteAsset = async (id) => {
+    if (!window.confirm('Удалить видео из библиотеки?')) return
+    try {
+      await api.deleteAsset(id)
+      setSuccessMsg('Видео удалено')
+      load()
+    } catch (err) {
+      if (err.status === 409) {
+        setError('Нельзя удалить: видео привязано к паре. Сначала удалите пару.')
+      } else {
+        setError(err.message)
+      }
+    }
+  }
+
   const handleUpload = async (e) => {
     e.preventDefault()
     if (!baselineFile || !candidateFile) return
@@ -44,19 +61,19 @@ export default function AdminVideoLibraryPage() {
         const fd = new FormData()
         fd.append('file', baselineFile)
         fd.append('method_type', 'baseline')
-        fd.append('title', baselineFile.name.replace(/\.[^.]+$/, ''))
+        fd.append('title', baselineTitle || baselineFile.name.replace(/\.[^.]+$/, ''))
         await apiCall(() => api.uploadAsset(fd))
       }
       if (candidateFile) {
         const fd = new FormData()
         fd.append('file', candidateFile)
         fd.append('method_type', 'candidate')
-        fd.append('title', candidateFile.name.replace(/\.[^.]+$/, ''))
+        fd.append('title', candidateTitle || candidateFile.name.replace(/\.[^.]+$/, ''))
         await apiCall(() => api.uploadAsset(fd))
       }
       setSuccessMsg('Baseline и candidate загружены')
-      setBaselineFile(null)
-      setCandidateFile(null)
+      setBaselineFile(null); setBaselineTitle('')
+      setCandidateFile(null); setCandidateTitle('')
       e.target.reset()
       load()
     } catch (err) {
@@ -103,6 +120,10 @@ export default function AdminVideoLibraryPage() {
                   {baselineFile.name}
                 </div>
               )}
+              <input className="input" placeholder="Название (необязательно)"
+                value={baselineTitle}
+                onChange={(e) => setBaselineTitle(e.target.value)}
+                style={{ marginTop: '8px', fontSize: '13px' }} />
             </div>
 
             <div style={{ padding: '16px', border: '1px solid rgba(67,217,139,0.3)',
@@ -117,6 +138,10 @@ export default function AdminVideoLibraryPage() {
                   {candidateFile.name}
                 </div>
               )}
+              <input className="input" placeholder="Название (необязательно)"
+                value={candidateTitle}
+                onChange={(e) => setCandidateTitle(e.target.value)}
+                style={{ marginTop: '8px', fontSize: '13px' }} />
             </div>
           </div>
 
@@ -144,7 +169,7 @@ export default function AdminVideoLibraryPage() {
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
-                  {['Название', 'Тип', 'Статус', 'Привязка к паре', 'Добавлено'].map((h) => (
+                  {['Название', 'Тип', 'Статус', 'Привязка к паре', 'Добавлено', ''].map((h) => (
                     <th key={h} style={{ textAlign: 'left', padding: '12px 16px',
                       color: 'var(--color-text-muted)', fontWeight: 500, whiteSpace: 'nowrap' }}>{h}</th>
                   ))}
@@ -180,6 +205,17 @@ export default function AdminVideoLibraryPage() {
                       <td style={{ padding: '12px 16px', color: 'var(--color-text-muted)',
                         fontSize: '12px', whiteSpace: 'nowrap' }}>
                         {new Date(a.created_at).toLocaleDateString()}
+                      </td>
+                      <td style={{ padding: '12px 16px' }}>
+                        {!a.source_item_id && (
+                          <button
+                            className="btn btn-ghost"
+                            style={{ fontSize: '12px', padding: '4px 8px', color: '#ff6584' }}
+                            onClick={() => handleDeleteAsset(a.id)}
+                          >
+                            🗑 Удалить
+                          </button>
+                        )}
                       </td>
                     </tr>
                   )

@@ -99,6 +99,22 @@ export default function AdminPairsPage() {
     }
   }
 
+  const handleDeletePair = async (id) => {
+    if (!window.confirm('Удалить пару? Видео вернутся в библиотеку.')) return
+    try {
+      await api.deletePair(id)
+      setSuccessMsg('Пара удалена, видео возвращены в библиотеку')
+      const data = await api.getSourceItems({ study_id: selectedStudy })
+      setSourceItems(data?.source_items ?? [])
+    } catch (err) {
+      if (err.status === 409) {
+        setError('Нельзя удалить: есть ответы участников для этой пары.')
+      } else {
+        setError(err.message)
+      }
+    }
+  }
+
   const copyText = (text) => navigator.clipboard.writeText(text)
 
   const QC_COLORS = {
@@ -325,7 +341,7 @@ export default function AdminPairsPage() {
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                   <thead>
                     <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
-                      {['Pair Code', 'Группа', 'Сложность', 'Ассеты', 'Ответы', 'QC', 'Attention'].map((h) => (
+                      {['Pair Code', 'Группа', 'Сложность', 'Ассеты', 'Ответы', 'QC', 'Attention', ''].map((h) => (
                         <th key={h} style={{ textAlign: 'left', padding: '8px 12px',
                           color: 'var(--color-text-muted)', fontWeight: 500 }}>{h}</th>
                       ))}
@@ -362,6 +378,15 @@ export default function AdminPairsPage() {
                           </td>
                           <td style={{ padding: '10px 12px', textAlign: 'center' }}>
                             {item.is_attention_check ? '✓' : ''}
+                          </td>
+                          <td style={{ padding: '10px 12px' }}>
+                            <button
+                              className="btn btn-ghost"
+                              style={{ fontSize: '12px', padding: '4px 8px', color: '#ff6584' }}
+                              onClick={() => handleDeletePair(item.id)}
+                            >
+                              🗑 Удалить
+                            </button>
                           </td>
                         </tr>
                       )
