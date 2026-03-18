@@ -91,14 +91,14 @@ export default function InstructionsPage() {
   )
 }
 
-// const kbdStyle = {
-//   display: 'inline-block',
-//   padding: '2px 8px',
-//   background: 'var(--color-surface-2)',
-//   border: '1px solid var(--color-border)',
-//   borderRadius: '4px',
-//   fontFamily: 'monospace',
-//   fontSize: '13px',
-//   color: 'var(--color-text)',
-//   marginRight: '6px',
-// }
+const kbdStyle = {
+  display: 'inline-block',
+  padding: '2px 8px',
+  background: 'var(--color-surface-2)',
+  border: '1px solid var(--color-border)',
+  borderRadius: '4px',
+  fontFamily: 'monospace',
+  fontSize: '13px',
+  color: 'var(--color-text)',
+  marginRight: '6px',
+}
