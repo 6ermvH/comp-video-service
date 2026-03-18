@@ -25,7 +25,8 @@ type mockStudyService struct {
 	listGroupsFn      func(context.Context, uuid.UUID) ([]*model.Group, error)
 	createGroupFn     func(context.Context, uuid.UUID, *model.CreateGroupRequest) (*model.Group, error)
 	listSourceItemsFn func(context.Context, *uuid.UUID, *uuid.UUID) ([]*model.SourceItem, error)
-	listAssetsFn      func(context.Context) ([]*model.Video, error)
+	listAssetsFn      func(context.Context, int, int) ([]*model.Video, int, error)
+	listFreeAssetsFn  func(context.Context) ([]*model.Video, error)
 	createPairFn      func(context.Context, uuid.UUID, *model.CreatePairRequest) (*model.SourceItem, error)
 	deletePairFn      func(context.Context, uuid.UUID) error
 }
@@ -48,8 +49,11 @@ func (m *mockStudyService) CreateGroup(ctx context.Context, id uuid.UUID, r *mod
 func (m *mockStudyService) ListSourceItems(ctx context.Context, sid *uuid.UUID, gid *uuid.UUID) ([]*model.SourceItem, error) {
 	return m.listSourceItemsFn(ctx, sid, gid)
 }
-func (m *mockStudyService) ListAssets(ctx context.Context) ([]*model.Video, error) {
-	return m.listAssetsFn(ctx)
+func (m *mockStudyService) ListAssets(ctx context.Context, page, perPage int) ([]*model.Video, int, error) {
+	return m.listAssetsFn(ctx, page, perPage)
+}
+func (m *mockStudyService) ListFreeAssets(ctx context.Context) ([]*model.Video, error) {
+	return m.listFreeAssetsFn(ctx)
 }
 func (m *mockStudyService) CreatePair(ctx context.Context, id uuid.UUID, req *model.CreatePairRequest) (*model.SourceItem, error) {
 	return m.createPairFn(ctx, id, req)
@@ -362,6 +366,43 @@ func TestAdminHandlerDeletePairAndAsset(t *testing.T) {
 	r.ServeHTTP(w, httptest.NewRequest(http.MethodDelete, "/assets/"+assetID.String(), nil))
 	if w.Code != http.StatusNoContent {
 		t.Fatalf("expected 204 for delete asset, got %d", w.Code)
+	}
+}
+
+func TestAdminHandlerListAssetsAndFreeAssets(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	h := NewAdminHandler(
+		&mockStudyService{
+			listAssetsFn: func(_ context.Context, page, perPage int) ([]*model.Video, int, error) {
+				if page != 2 || perPage != 10 {
+					t.Fatalf("unexpected pagination: page=%d per_page=%d", page, perPage)
+				}
+				return []*model.Video{{ID: uuid.New()}}, 33, nil
+			},
+			listFreeAssetsFn: func(context.Context) ([]*model.Video, error) {
+				return []*model.Video{{ID: uuid.New()}}, nil
+			},
+		},
+		&mockAssetService{},
+		&mockAnalyticsService{},
+		&mockQCService{},
+		&mockExportService{},
+	)
+
+	r := gin.New()
+	r.GET("/assets", h.ListAssets)
+	r.GET("/assets/free", h.ListFreeAssets)
+
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/assets?page=2&per_page=10", nil))
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected 200 for assets, got %d", w.Code)
+	}
+
+	w = httptest.NewRecorder()
+	r.ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/assets/free", nil))
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected 200 for free assets, got %d", w.Code)
 	}
 }
 

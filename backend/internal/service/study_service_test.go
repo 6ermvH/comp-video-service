@@ -46,9 +46,14 @@ func TestStudyServiceBasicMethodsWithGomock(t *testing.T) {
 		t.Fatalf("ListSourceItems: %v", err)
 	}
 
-	videoRepo.EXPECT().ListAll(gomock.Any()).Return([]*model.Video{}, nil)
-	if _, err := svc.ListAssets(context.Background()); err != nil {
+	videoRepo.EXPECT().ListPaged(gomock.Any(), 1, 20).Return([]*model.Video{}, 0, nil)
+	if _, _, err := svc.ListAssets(context.Background(), 1, 20); err != nil {
 		t.Fatalf("ListAssets: %v", err)
+	}
+
+	videoRepo.EXPECT().ListFree(gomock.Any()).Return([]*model.Video{}, nil)
+	if _, err := svc.ListFreeAssets(context.Background()); err != nil {
+		t.Fatalf("ListFreeAssets: %v", err)
 	}
 
 	studyID := uuid.New()

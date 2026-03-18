@@ -292,3 +292,34 @@ func (mr *MockstudyVideoRepositoryMockRecorder) ListAll(ctx any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListAll", reflect.TypeOf((*MockstudyVideoRepository)(nil).ListAll), ctx)
 }
+
+// ListFree mocks base method.
+func (m *MockstudyVideoRepository) ListFree(ctx context.Context) ([]*model.Video, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListFree", ctx)
+	ret0, _ := ret[0].([]*model.Video)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListFree indicates an expected call of ListFree.
+func (mr *MockstudyVideoRepositoryMockRecorder) ListFree(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListFree", reflect.TypeOf((*MockstudyVideoRepository)(nil).ListFree), ctx)
+}
+
+// ListPaged mocks base method.
+func (m *MockstudyVideoRepository) ListPaged(ctx context.Context, page, perPage int) ([]*model.Video, int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListPaged", ctx, page, perPage)
+	ret0, _ := ret[0].([]*model.Video)
+	ret1, _ := ret[1].(int)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// ListPaged indicates an expected call of ListPaged.
+func (mr *MockstudyVideoRepositoryMockRecorder) ListPaged(ctx, page, perPage any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListPaged", reflect.TypeOf((*MockstudyVideoRepository)(nil).ListPaged), ctx, page, perPage)
+}

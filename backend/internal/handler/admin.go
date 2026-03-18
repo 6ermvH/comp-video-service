@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"mime/multipart"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -22,7 +23,8 @@ type studyService interface {
 	ListGroups(ctx context.Context, studyID uuid.UUID) ([]*model.Group, error)
 	CreateGroup(ctx context.Context, studyID uuid.UUID, req *model.CreateGroupRequest) (*model.Group, error)
 	ListSourceItems(ctx context.Context, studyID *uuid.UUID, groupID *uuid.UUID) ([]*model.SourceItem, error)
-	ListAssets(ctx context.Context) ([]*model.Video, error)
+	ListAssets(ctx context.Context, page, perPage int) ([]*model.Video, int, error)
+	ListFreeAssets(ctx context.Context) ([]*model.Video, error)
 	CreatePair(ctx context.Context, studyID uuid.UUID, req *model.CreatePairRequest) (*model.SourceItem, error)
 	DeletePair(ctx context.Context, id uuid.UUID) error
 }
@@ -311,21 +313,52 @@ func (h *AdminHandler) ListSourceItems(c *gin.Context) {
 }
 
 // ListAssets godoc
-// @Summary      List all video assets
+// @Summary      List video assets (paginated)
+// @Tags         admin
+// @Produce      json
+// @Security     BearerAuth
+// @Param        page      query  int  false  "Page number (default 1)"
+// @Param        per_page  query  int  false  "Items per page (default 20, max 100)"
+// @Success      200  {object}  map[string]interface{}
+// @Failure      500  {object}  map[string]string
+// @Router       /admin/assets [get]
+func (h *AdminHandler) ListAssets(c *gin.Context) {
+	page := 1
+	perPage := 20
+	if v, err := strconv.Atoi(c.Query("page")); err == nil && v > 0 {
+		page = v
+	}
+	if v, err := strconv.Atoi(c.Query("per_page")); err == nil && v > 0 && v <= 100 {
+		perPage = v
+	}
+
+	assets, total, err := h.studySvc.ListAssets(c.Request.Context(), page, perPage)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"assets":   assets,
+		"total":    total,
+		"page":     page,
+		"per_page": perPage,
+	})
+}
+
+// ListFreeAssets godoc
+// @Summary      List free (unlinked) video assets
+// @Description  Returns all video assets not linked to any pair, for use in pair builder.
 // @Tags         admin
 // @Produce      json
 // @Security     BearerAuth
 // @Success      200  {object}  map[string]interface{}
 // @Failure      500  {object}  map[string]string
-// @Router       /admin/assets [get]
-func (h *AdminHandler) ListAssets(c *gin.Context) {
-	assets, err := h.studySvc.ListAssets(c.Request.Context())
+// @Router       /admin/assets/free [get]
+func (h *AdminHandler) ListFreeAssets(c *gin.Context) {
+	assets, err := h.studySvc.ListFreeAssets(c.Request.Context())
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
-	}
-	if assets == nil {
-		assets = make([]*model.Video, 0)
 	}
 	c.JSON(http.StatusOK, gin.H{"assets": assets})
 }
