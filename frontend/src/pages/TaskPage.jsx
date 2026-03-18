@@ -252,14 +252,6 @@ export default function TaskPage({ isPractice = false }) {
                 disabled={submitting}
               />
             )}
-            <button
-              className="btn btn-primary"
-              onClick={handleSubmit}
-              disabled={!choice || submitting}
-              style={{ minWidth: '140px', padding: '10px 18px', marginLeft: 'auto', alignSelf: 'flex-end' }}
-            >
-              {submitting ? 'Отправка…' : 'Следующее'}
-            </button>
           </div>
         )}
 
