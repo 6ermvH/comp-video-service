@@ -19,7 +19,7 @@ export default function AdminPairsPage() {
   const [creatingGroup, setCreatingGroup] = useState(false)
 
   // Pair builder state
-  const [assets, setAssets]               = useState([])
+  const [freeAssets, setFreeAssets]       = useState([])
   const [pairForm, setPairForm]           = useState({ baseline_video_id: '', candidate_video_id: '', group_id: '', pair_code: '', difficulty: '' })
   const [creatingPair, setCreatingPair]   = useState(false)
   const [showPairBuilder, setShowPairBuilder] = useState(false)
@@ -42,12 +42,12 @@ export default function AdminPairsPage() {
     Promise.all([
       api.getGroups(selectedStudy),
       api.getSourceItems({ study_id: selectedStudy }),
-      api.getAssets(),
+      api.getFreeAssets(),
     ])
       .then(([gData, sData, aData]) => {
         setGroups(gData?.groups ?? [])
         setSourceItems(sData?.source_items ?? [])
-        setAssets(aData?.assets ?? [])
+        setFreeAssets(aData?.assets ?? [])
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false))
@@ -77,6 +77,7 @@ export default function AdminPairsPage() {
   const handleCreatePair = async (e) => {
     e.preventDefault()
     if (!selectedStudy) return
+    if (!pairForm.baseline_video_id || !pairForm.candidate_video_id) return
     setCreatingPair(true)
     setError(null)
     try {
@@ -90,8 +91,12 @@ export default function AdminPairsPage() {
       setSuccessMsg('Пара создана')
       setPairForm({ baseline_video_id: '', candidate_video_id: '', group_id: '', pair_code: '', difficulty: '' })
       setShowPairBuilder(false)
-      const data = await api.getSourceItems({ study_id: selectedStudy })
-      setSourceItems(data?.source_items ?? [])
+      const [sData, aData] = await Promise.all([
+        api.getSourceItems({ study_id: selectedStudy }),
+        api.getFreeAssets(),
+      ])
+      setSourceItems(sData?.source_items ?? [])
+      setFreeAssets(aData?.assets ?? [])
     } catch (err) {
       setError(err.message)
     } finally {
@@ -278,21 +283,21 @@ export default function AdminPairsPage() {
                     </div>
                     <div>
                       <label className="label">Baseline видео *</label>
-                      <select className="input" required value={pairForm.baseline_video_id}
-                        onChange={(e) => setPairForm({ ...pairForm, baseline_video_id: e.target.value })}>
-                        <option value="">— выберите baseline —</option>
-                        {assets.filter((a) => a.method_type === 'baseline' && !a.source_item_id)
-                          .map((a) => <option key={a.id} value={a.id}>{a.title || a.s3_key}</option>)}
-                      </select>
+                      <VideoCombobox
+                        options={freeAssets.filter((a) => a.method_type === 'baseline')}
+                        value={pairForm.baseline_video_id}
+                        onChange={(id) => setPairForm({ ...pairForm, baseline_video_id: id })}
+                        placeholder="Поиск baseline..."
+                      />
                     </div>
                     <div>
                       <label className="label">Candidate видео *</label>
-                      <select className="input" required value={pairForm.candidate_video_id}
-                        onChange={(e) => setPairForm({ ...pairForm, candidate_video_id: e.target.value })}>
-                        <option value="">— выберите candidate —</option>
-                        {assets.filter((a) => a.method_type === 'candidate' && !a.source_item_id)
-                          .map((a) => <option key={a.id} value={a.id}>{a.title || a.s3_key}</option>)}
-                      </select>
+                      <VideoCombobox
+                        options={freeAssets.filter((a) => a.method_type === 'candidate')}
+                        value={pairForm.candidate_video_id}
+                        onChange={(id) => setPairForm({ ...pairForm, candidate_video_id: id })}
+                        placeholder="Поиск candidate..."
+                      />
                     </div>
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
@@ -397,6 +402,62 @@ export default function AdminPairsPage() {
             )}
           </div>
         </>
+      )}
+    </div>
+  )
+}
+
+function VideoCombobox({ options, value, onChange, placeholder }) {
+  const [query, setQuery] = useState('')
+  const [open, setOpen] = useState(false)
+
+  const selected = options.find((o) => o.id === value)
+  const filtered = options
+    .filter((o) => (o.title || o.s3_key).toLowerCase().includes(query.toLowerCase()))
+    .slice(0, 30)
+
+  const handleSelect = (id) => {
+    onChange(id)
+    setQuery('')
+    setOpen(false)
+  }
+
+  return (
+    <div style={{ position: 'relative' }}>
+      <input
+        className="input"
+        placeholder={placeholder}
+        value={open ? query : (selected ? (selected.title || selected.s3_key) : '')}
+        onChange={(e) => { setQuery(e.target.value); onChange(''); setOpen(true) }}
+        onFocus={() => setOpen(true)}
+        onBlur={() => setTimeout(() => setOpen(false), 150)}
+      />
+      {open && (
+        <div style={{
+          position: 'absolute', zIndex: 20, width: '100%',
+          background: 'var(--color-surface)', border: '1px solid var(--color-border)',
+          borderRadius: 'var(--radius-sm)', maxHeight: '220px', overflowY: 'auto',
+          boxShadow: '0 4px 16px rgba(0,0,0,0.3)', marginTop: '2px',
+        }}>
+          {filtered.length === 0 ? (
+            <div style={{ padding: '10px 12px', fontSize: '13px', color: 'var(--color-text-muted)' }}>
+              Ничего не найдено
+            </div>
+          ) : filtered.map((o) => (
+            <div
+              key={o.id}
+              onMouseDown={() => handleSelect(o.id)}
+              style={{
+                padding: '8px 12px', cursor: 'pointer', fontSize: '13px',
+                background: o.id === value ? 'rgba(108,99,255,0.15)' : 'transparent',
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(108,99,255,0.1)' }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = o.id === value ? 'rgba(108,99,255,0.15)' : 'transparent' }}
+            >
+              {o.title || o.s3_key}
+            </div>
+          ))}
+        </div>
       )}
     </div>
   )

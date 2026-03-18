@@ -184,7 +184,8 @@ export const api = {
   uploadAsset: (formData) =>
     requestMultipart('/admin/assets/upload', formData),
 
-  getAssets: () => request('/admin/assets'),
+  getAssets:     (page = 1, perPage = 20) => request(`/admin/assets?page=${page}&per_page=${perPage}`),
+  getFreeAssets: () => request('/admin/assets/free'),
 
   deleteAsset: (id) => request(`/admin/assets/${id}`, { method: 'DELETE' }),
   deletePair:  (id) => request(`/admin/source-items/${id}`, { method: 'DELETE' }),

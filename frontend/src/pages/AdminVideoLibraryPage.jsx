@@ -14,6 +14,11 @@ export default function AdminVideoLibraryPage() {
   const [error, setError] = useState(null)
   const [successMsg, setSuccessMsg] = useState(null)
 
+  // Pagination state
+  const [page, setPage]   = useState(1)
+  const [total, setTotal] = useState(0)
+  const PER_PAGE = 20
+
   // Upload form state
   const [baselineFile, setBaselineFile]   = useState(null)
   const [baselineTitle, setBaselineTitle] = useState('')
@@ -21,11 +26,12 @@ export default function AdminVideoLibraryPage() {
   const [candidateTitle, setCandidateTitle] = useState('')
   const [uploading, setUploading] = useState(false)
 
-  const load = async () => {
+  const load = async (p = page) => {
     setLoading(true)
     try {
-      const data = await apiCall(() => api.getAssets(), { onRetry: load })
+      const data = await apiCall(() => api.getAssets(p, PER_PAGE), { onRetry: () => load(p) })
       setAssets(data?.assets ?? [])
+      setTotal(data?.total ?? 0)
     } catch (err) {
       setError(err.message)
     } finally {
@@ -34,14 +40,18 @@ export default function AdminVideoLibraryPage() {
   }
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { load() }, [])
+  useEffect(() => { load(page) }, [page])
 
   const handleDeleteAsset = async (id) => {
     if (!window.confirm('Удалить видео из библиотеки?')) return
     try {
       await api.deleteAsset(id)
       setSuccessMsg('Видео удалено')
-      load()
+      if (assets.length === 1 && page > 1) {
+        setPage((p) => p - 1)
+      } else {
+        load(page)
+      }
     } catch (err) {
       if (err.status === 409) {
         setError('Нельзя удалить: видео привязано к паре. Сначала удалите пару.')
@@ -87,7 +97,7 @@ export default function AdminVideoLibraryPage() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <h1 style={{ fontSize: '24px', fontWeight: 700 }}>Видеотека</h1>
-        <button className="btn btn-ghost" onClick={load}>↻ Обновить</button>
+        <button className="btn btn-ghost" onClick={() => load(page)}>↻ Обновить</button>
       </div>
 
       {error && <ErrorBox message={error} onClose={() => setError(null)} />}
@@ -223,6 +233,23 @@ export default function AdminVideoLibraryPage() {
               </tbody>
             </table>
           </div>
+        </div>
+      )}
+
+      {/* Pagination */}
+      {total > PER_PAGE && (
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', marginTop: '8px' }}>
+          <button className="btn btn-ghost" style={{ padding: '4px 12px' }}
+            disabled={page === 1} onClick={() => setPage((p) => p - 1)}>
+            ← Назад
+          </button>
+          <span style={{ fontSize: '14px', color: 'var(--color-text-muted)' }}>
+            Страница {page} из {Math.ceil(total / PER_PAGE)} ({total} всего)
+          </span>
+          <button className="btn btn-ghost" style={{ padding: '4px 12px' }}
+            disabled={page >= Math.ceil(total / PER_PAGE)} onClick={() => setPage((p) => p + 1)}>
+            Вперёд →
+          </button>
         </div>
       )}
     </div>
