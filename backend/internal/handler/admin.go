@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"mime/multipart"
 	"net/http"
@@ -23,10 +24,12 @@ type studyService interface {
 	ListSourceItems(ctx context.Context, studyID *uuid.UUID, groupID *uuid.UUID) ([]*model.SourceItem, error)
 	ListAssets(ctx context.Context) ([]*model.Video, error)
 	CreatePair(ctx context.Context, studyID uuid.UUID, req *model.CreatePairRequest) (*model.SourceItem, error)
+	DeletePair(ctx context.Context, id uuid.UUID) error
 }
 
 type assetService interface {
 	Upload(ctx context.Context, input service.AssetUploadInput) (*model.Video, error)
+	DeleteAsset(ctx context.Context, id uuid.UUID) error
 }
 
 type analyticsService interface {
@@ -357,6 +360,66 @@ func (h *AdminHandler) CreatePair(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusCreated, item)
+}
+
+// DeletePair godoc
+// @Summary      Delete a source item (pair)
+// @Description  Deletes a pair and frees its video assets back to the library. Blocked if responses exist.
+// @Tags         admin
+// @Produce      json
+// @Security     BearerAuth
+// @Security     CSRFToken
+// @Param        id   path      string  true  "Source item UUID"
+// @Success      204  "No Content"
+// @Failure      400  {object}  map[string]string
+// @Failure      409  {object}  map[string]string
+// @Failure      500  {object}  map[string]string
+// @Router       /admin/source-items/{id} [delete]
+func (h *AdminHandler) DeletePair(c *gin.Context) {
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
+		return
+	}
+	if err := h.studySvc.DeletePair(c.Request.Context(), id); err != nil {
+		if errors.Is(err, service.ErrPairHasResponses) {
+			c.JSON(http.StatusConflict, gin.H{"error": "pair has participant responses and cannot be deleted"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.Status(http.StatusNoContent)
+}
+
+// DeleteAsset godoc
+// @Summary      Delete a video asset
+// @Description  Deletes a free video asset. Blocked if still linked to a pair or used in presentations.
+// @Tags         admin
+// @Produce      json
+// @Security     BearerAuth
+// @Security     CSRFToken
+// @Param        id   path      string  true  "Asset UUID"
+// @Success      204  "No Content"
+// @Failure      400  {object}  map[string]string
+// @Failure      409  {object}  map[string]string
+// @Failure      500  {object}  map[string]string
+// @Router       /admin/assets/{id} [delete]
+func (h *AdminHandler) DeleteAsset(c *gin.Context) {
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
+		return
+	}
+	if err := h.assetSvc.DeleteAsset(c.Request.Context(), id); err != nil {
+		if errors.Is(err, service.ErrAssetInUse) {
+			c.JSON(http.StatusConflict, gin.H{"error": "asset is linked to a pair or in use — delete the pair first"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.Status(http.StatusNoContent)
 }
 
 // AnalyticsOverview godoc

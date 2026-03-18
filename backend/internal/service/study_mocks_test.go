@@ -195,6 +195,21 @@ func (mr *MocksourceItemRepositoryMockRecorder) Create(ctx, item any) *gomock.Ca
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MocksourceItemRepository)(nil).Create), ctx, item)
 }
 
+// Delete mocks base method.
+func (m *MocksourceItemRepository) Delete(ctx context.Context, id uuid.UUID) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Delete", ctx, id)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Delete indicates an expected call of Delete.
+func (mr *MocksourceItemRepositoryMockRecorder) Delete(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MocksourceItemRepository)(nil).Delete), ctx, id)
+}
+
 // ListWithFilters mocks base method.
 func (m *MocksourceItemRepository) ListWithFilters(ctx context.Context, studyID, groupID *uuid.UUID) ([]*model.SourceItem, error) {
 	m.ctrl.T.Helper()

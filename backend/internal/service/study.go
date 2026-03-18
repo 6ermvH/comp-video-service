@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -33,6 +34,7 @@ type groupRepository interface {
 type sourceItemRepository interface {
 	Create(ctx context.Context, item *model.SourceItem) (*model.SourceItem, error)
 	ListWithFilters(ctx context.Context, studyID *uuid.UUID, groupID *uuid.UUID) ([]*model.SourceItem, error)
+	Delete(ctx context.Context, id uuid.UUID) (bool, error)
 }
 
 type studyVideoRepository interface {
@@ -40,6 +42,8 @@ type studyVideoRepository interface {
 	Link(ctx context.Context, videoID uuid.UUID, sourceItemID uuid.UUID, methodType string) error
 	ListAll(ctx context.Context) ([]*model.Video, error)
 }
+
+var ErrPairHasResponses = errors.New("pair has participant responses and cannot be deleted")
 
 //go:generate go run go.uber.org/mock/mockgen -source=study.go -destination=study_mocks_test.go -package=service
 
@@ -123,4 +127,15 @@ func (s *StudyService) CreatePair(ctx context.Context, studyID uuid.UUID, req *m
 		return nil, fmt.Errorf("link candidate: %w", err)
 	}
 	return item, nil
+}
+
+func (s *StudyService) DeletePair(ctx context.Context, id uuid.UUID) error {
+	deleted, err := s.sourceItemRepo.Delete(ctx, id)
+	if err != nil {
+		return err
+	}
+	if !deleted {
+		return ErrPairHasResponses
+	}
+	return nil
 }

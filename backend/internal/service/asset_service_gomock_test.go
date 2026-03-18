@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"comp-video-service/backend/internal/model"
+	"github.com/google/uuid"
 	"go.uber.org/mock/gomock"
 )
 
@@ -104,4 +105,35 @@ func TestAssetServiceUpload(t *testing.T) {
 			t.Fatal("expected video")
 		}
 	})
+}
+
+func TestAssetServiceDeleteAsset(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	repo := NewMockassetVideoRepository(ctrl)
+	s3 := NewMockassetStorage(ctrl)
+	svc := newAssetServiceWithDeps(repo, s3)
+
+	id := uuid.New()
+	repo.EXPECT().Delete(gomock.Any(), id).Return(true, nil)
+	if err := svc.DeleteAsset(context.Background(), id); err != nil {
+		t.Fatalf("DeleteAsset error: %v", err)
+	}
+}
+
+func TestAssetServiceDeleteAssetBlocked(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	repo := NewMockassetVideoRepository(ctrl)
+	s3 := NewMockassetStorage(ctrl)
+	svc := newAssetServiceWithDeps(repo, s3)
+
+	id := uuid.New()
+	repo.EXPECT().Delete(gomock.Any(), id).Return(false, nil)
+	err := svc.DeleteAsset(context.Background(), id)
+	if err == nil || err != ErrAssetInUse {
+		t.Fatalf("expected ErrAssetInUse, got %v", err)
+	}
 }

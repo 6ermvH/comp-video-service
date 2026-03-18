@@ -133,6 +133,8 @@ func main() {
 		adminGroup.GET("/source-items", adminH.ListSourceItems)
 		adminGroup.GET("/assets", adminH.ListAssets)
 		adminGroup.POST("/studies/:id/pairs", adminH.CreatePair)
+		adminGroup.DELETE("/source-items/:id", adminH.DeletePair)
+		adminGroup.DELETE("/assets/:id", adminH.DeleteAsset)
 
 		adminGroup.GET("/analytics/overview", adminH.AnalyticsOverview)
 		adminGroup.GET("/analytics/study/:id", adminH.AnalyticsStudy)
