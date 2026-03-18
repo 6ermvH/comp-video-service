@@ -34,7 +34,6 @@ export default function CompletionPage() {
           Спасибо за участие!
         </h1>
 
-        {/*
         <p style={{ color: 'var(--color-text-muted)', lineHeight: 1.8, marginBottom: '32px' }}>
           Вы успешно завершили исследование. Ваши ответы очень помогут нам
           улучшить качество алгоритмов симуляции.
@@ -84,7 +83,6 @@ export default function CompletionPage() {
         >
           Начать новую сессию
         </button>
-        */}
       </div>
     </div>
   )
