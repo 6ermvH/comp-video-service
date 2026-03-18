@@ -18,15 +18,6 @@ export default function AdminPairsPage() {
   const [groupForm, setGroupForm]       = useState({ name: '', description: '', priority: 0, target_votes_per_pair: 10 })
   const [creatingGroup, setCreatingGroup] = useState(false)
 
-  // CSV import state
-  const [csvFile, setCsvFile]           = useState(null)
-  const [importing, setImporting]       = useState(false)
-
-  // Asset upload state
-  const [assetFile, setAssetFile]       = useState(null)
-  const [assetMeta, setAssetMeta]       = useState({ source_item_id: '', method_type: 'baseline', title: '', description: '' })
-  const [uploading, setUploading]       = useState(false)
-
   // Pair builder state
   const [assets, setAssets]               = useState([])
   const [pairForm, setPairForm]           = useState({ baseline_video_id: '', candidate_video_id: '', group_id: '', pair_code: '', difficulty: '' })
@@ -80,51 +71,6 @@ export default function AdminPairsPage() {
       setError(err.message)
     } finally {
       setCreatingGroup(false)
-    }
-  }
-
-  const handleImport = async (e) => {
-    e.preventDefault()
-    if (!csvFile || !selectedStudy) return
-    const fd = new FormData()
-    fd.append('file', csvFile)
-    setImporting(true)
-    setError(null)
-    try {
-      const res = await apiCall(() => api.importPairs(selectedStudy, fd))
-      setSuccessMsg(`Импортировано пар: ${res?.imported ?? '?'}`)
-      setCsvFile(null)
-      e.target.reset()
-      const data = await api.getSourceItems({ study_id: selectedStudy })
-      setSourceItems(data?.source_items ?? [])
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setImporting(false)
-    }
-  }
-
-  const handleUploadAsset = async (e) => {
-    e.preventDefault()
-    if (!assetFile || !assetMeta.source_item_id) return
-    const fd = new FormData()
-    fd.append('file', assetFile)
-    fd.append('method_type', assetMeta.method_type)
-    if (assetMeta.source_item_id) fd.append('source_item_id', assetMeta.source_item_id)
-    if (assetMeta.title)          fd.append('title', assetMeta.title)
-    if (assetMeta.description)    fd.append('description', assetMeta.description)
-    setUploading(true)
-    setError(null)
-    try {
-      await apiCall(() => api.uploadAsset(fd))
-      setSuccessMsg('Видео-ассет успешно загружен')
-      setAssetFile(null)
-      setAssetMeta({ source_item_id: '', method_type: 'baseline', title: '', description: '' })
-      e.target.reset()
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setUploading(false)
     }
   }
 
@@ -292,27 +238,6 @@ export default function AdminPairsPage() {
             )}
           </div>
 
-          {/* ── CSV import ───────────────────────────────────── */}
-          <div className="card">
-            <h2 style={{ fontSize: '17px', fontWeight: 600, marginBottom: '16px' }}>CSV-импорт пар</h2>
-            <p style={{ fontSize: '13px', color: 'var(--color-text-muted)', marginBottom: '16px' }}>
-              Формат: <code style={{ fontFamily: 'monospace', padding: '1px 6px',
-                background: 'var(--color-surface-2)', borderRadius: '4px' }}>
-                group_id, source_image_id, pair_code, difficulty, is_attention_check, notes
-              </code>
-            </p>
-            <form onSubmit={handleImport} style={{ display: 'flex', alignItems: 'flex-end', gap: '12px' }}>
-              <div style={{ flex: 1 }}>
-                <label className="label">CSV-файл *</label>
-                <input type="file" accept=".csv" className="input"
-                  onChange={(e) => setCsvFile(e.target.files[0])} required />
-              </div>
-              <button type="submit" className="btn btn-primary" disabled={!csvFile || importing}>
-                {importing ? 'Импорт…' : 'Импортировать'}
-              </button>
-            </form>
-          </div>
-
           {/* ── Pair builder ─────────────────────────────────── */}
           {selectedStudy && (
             <div className="card">
@@ -380,67 +305,6 @@ export default function AdminPairsPage() {
               )}
             </div>
           )}
-
-          {/* ── Asset upload ─────────────────────────────────── */}
-          <div className="card">
-            <h2 style={{ fontSize: '17px', fontWeight: 600, marginBottom: '16px' }}>Загрузить видео-ассет</h2>
-            {sourceItems.length === 0 ? (
-              <p style={{ color: 'var(--color-text-muted)', fontSize: '14px' }}>
-                Сначала импортируйте пары через CSV — затем здесь можно привязать видео к паре.
-              </p>
-            ) : (
-              <form onSubmit={handleUploadAsset} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '14px' }}>
-                  <div>
-                    <label className="label">Пара *</label>
-                    <select className="input"
-                      value={assetMeta.source_item_id}
-                      onChange={(e) => setAssetMeta({ ...assetMeta, source_item_id: e.target.value })}>
-                      <option value="">— Выберите пару —</option>
-                      {sourceItems.map((item) => (
-                        <option key={item.id} value={item.id}>
-                          {item.pair_code || item.source_image_id || item.id}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="label">Тип метода</label>
-                    <select className="input" value={assetMeta.method_type}
-                      onChange={(e) => setAssetMeta({ ...assetMeta, method_type: e.target.value })}>
-                      <option value="baseline">baseline</option>
-                      <option value="candidate">candidate</option>
-                    </select>
-                  </div>
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '14px' }}>
-                  <div>
-                    <label className="label">Название (необязательно)</label>
-                    <input className="input" placeholder="Название ассета"
-                      value={assetMeta.title}
-                      onChange={(e) => setAssetMeta({ ...assetMeta, title: e.target.value })} />
-                  </div>
-                  <div>
-                    <label className="label">Описание (необязательно)</label>
-                    <input className="input" placeholder="Краткое описание"
-                      value={assetMeta.description}
-                      onChange={(e) => setAssetMeta({ ...assetMeta, description: e.target.value })} />
-                  </div>
-                </div>
-                <div>
-                  <label className="label">Видео-файл (mp4) *</label>
-                  <input type="file" accept="video/mp4,video/*" className="input"
-                    onChange={(e) => setAssetFile(e.target.files[0])} required />
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                  <button type="submit" className="btn btn-primary"
-                    disabled={!assetFile || !assetMeta.source_item_id || uploading}>
-                    {uploading ? 'Загрузка…' : 'Загрузить'}
-                  </button>
-                </div>
-              </form>
-            )}
-          </div>
 
           {/* ── Source items list ────────────────────────────── */}
           <div>

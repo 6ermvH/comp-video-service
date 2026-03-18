@@ -176,10 +176,6 @@ export const api = {
   createGroup: (studyId, data) =>
     request(`/admin/studies/${studyId}/groups`, { method: 'POST', body: JSON.stringify(data) }),
 
-  /** POST /admin/studies/:id/import — multipart, field: file (CSV) */
-  importPairs: (studyId, formData) =>
-    requestMultipart(`/admin/studies/${studyId}/import`, formData),
-
   /**
    * POST /admin/assets/upload — multipart fields:
    *   file (mp4), method_type, optional: source_item_id, title, description
