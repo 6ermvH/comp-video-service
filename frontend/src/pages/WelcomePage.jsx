@@ -69,7 +69,6 @@ export default function WelcomePage() {
           <div style={{
             display: 'flex',
             flexDirection: 'column',
-            alignItems: 'center',
             gap: '12px',
             marginTop: '12px',
             fontSize: introFontSize,
