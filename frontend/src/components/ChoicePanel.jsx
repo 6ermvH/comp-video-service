@@ -4,9 +4,9 @@
  */
 export default function ChoicePanel({ choice, onChange, disabled, tieEnabled = true }) {
   const options = [
-    { key: 'left',  label: 'A', hint: '1', color: '#3b82f6' },
-    { key: 'right', label: 'B', hint: '2', color: '#10b981' },
-    ...(tieEnabled ? [{ key: 'tie', label: 'Затрудняюсь ответить', hint: '0', color: '#6b7280' }] : []),
+    { key: 'left',  label: 'A', color: '#3b82f6' },
+    { key: 'right', label: 'B', color: '#10b981' },
+    ...(tieEnabled ? [{ key: 'tie', label: 'Затрудняюсь ответить', color: '#6b7280' }] : []),
   ]
 
   return (
