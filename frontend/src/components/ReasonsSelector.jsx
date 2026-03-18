@@ -23,7 +23,7 @@ export default function ReasonsSelector({ selected, onChange, disabled }) {
 
   return (
     <div>
-      <p style={{ fontSize: '12px', color: 'var(--color-text-muted)', marginBottom: '6px' }}>
+      <p style={{ fontSize: '12px', color: 'var(--color-text-muted)', marginBottom: '4px' }}>
         Причина (необязательно, до {MAX_SELECTED}):
       </p>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
