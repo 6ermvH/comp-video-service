@@ -186,6 +186,9 @@ export const api = {
 
   getAssets: () => request('/admin/assets'),
 
+  deleteAsset: (id) => request(`/admin/assets/${id}`, { method: 'DELETE' }),
+  deletePair:  (id) => request(`/admin/source-items/${id}`, { method: 'DELETE' }),
+
   createPair: (studyId, body) =>
     request(`/admin/studies/${studyId}/pairs`, { method: 'POST', body: JSON.stringify(body) }),
 
