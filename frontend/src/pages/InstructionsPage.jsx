@@ -24,7 +24,7 @@ export default function InstructionsPage() {
       <div style={{ maxWidth: 'min(680px, 100%)', width: '100%' }}>
 
         <h1 style={{ fontSize: '26px', fontWeight: 700, marginBottom: '24px', textAlign: 'center' }}>
-          Инструкции
+          Инструкция
         </h1>
 
         {instructionsText ? (
@@ -34,32 +34,25 @@ export default function InstructionsPage() {
         ) : (
           <div className="card" style={{ marginBottom: '24px' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-
               <section>
-                <h3 style={{ fontSize: '17px', marginBottom: '10px', color: 'var(--color-primary-h)' }}>
-                  Что вам предстоит делать
-                </h3>
-                <p style={{ color: 'var(--color-text-muted)', lineHeight: 1.8 }}>
-                  Вы увидите пары коротких видеороликов с визуальными эффектами (наводнение, взрыв).
-                  Видео <strong>A</strong> и <strong>B</strong> — два разных метода симуляции одного
-                  и того же события. Выберите, какое из них выглядит <strong>более реалистично</strong>.
-                </p>
-              </section>
-
-              <hr style={{ border: 'none', borderTop: '1px solid var(--color-border)' }} />
-
-              <section>
-                <h3 style={{ fontSize: '17px', marginBottom: '10px', color: 'var(--color-primary-h)' }}>
-                  Как оценивать
-                </h3>
                 <ul style={{ paddingLeft: '20px', color: 'var(--color-text-muted)', lineHeight: 2 }}>
-                  <li>Смотрите на <strong>реалистичность движения</strong> частиц / воды / огня</li>
-                  <li>Обращайте внимание на <strong>артефакты и дёргание</strong></li>
-                  <li>Оценивайте <strong>общее визуальное качество</strong></li>
-                  <li>Если оба видео кажутся одинаковыми — выберите «<strong>Равны</strong>»</li>
+                  <li>Будут представлены видео А и B, выберите лучшее видео в целом.</li>
+                  <li>
+                    Обращайте внимание на следующие факторы:
+                    <ul style={{ marginTop: '4px', paddingLeft: '22px', lineHeight: 1.9 }}>
+                      <li>реализм</li>
+                      <li>стабильность (плавность и согласованность движения)</li>
+                      <li>отсутствие артефактов</li>
+                      <li>общая визуальная целостность (видео выглядит как одна связная сцена)</li>
+                    </ul>
+                  </li>
+                  <li>Если затрудняетесь определить лучшее видео, выберите «<strong>Затрудняюсь ответить</strong>»</li>
+                  <li>Вы можете повторить просмотр неограниченное количество раз. Пожалуйста, не спешите — качество ваших оценок важнее скорости.</li>
+                  <li>После подтверждения выбора и перехода к следующей паре видео, вы не сможете вернуться назад и изменить свой выбор.</li>
                 </ul>
               </section>
 
+              {/*
               <hr style={{ border: 'none', borderTop: '1px solid var(--color-border)' }} />
 
               <section>
@@ -76,19 +69,7 @@ export default function InstructionsPage() {
                   <span><kbd style={kbdStyle}>Space</kbd> — Пауза / Воспроизведение</span>
                 </div>
               </section>
-
-              <hr style={{ border: 'none', borderTop: '1px solid var(--color-border)' }} />
-
-              <section>
-                <h3 style={{ fontSize: '17px', marginBottom: '10px', color: 'var(--color-primary-h)' }}>
-                  Повтор
-                </h3>
-                <p style={{ color: 'var(--color-text-muted)', lineHeight: 1.8 }}>
-                  Вы можете повторить просмотр неограниченное количество раз. Пожалуйста,
-                  не спешите — качество ваших оценок важнее скорости.
-                </p>
-              </section>
-
+              */}
             </div>
           </div>
         )}
@@ -99,7 +80,7 @@ export default function InstructionsPage() {
             onClick={() => navigate('/practice')}
             style={{ padding: '14px 40px', fontSize: '16px', width: '100%' }}
           >
-            Понятно, начнём тренировку →
+            Далее
           </button>
         </div>
       </div>
