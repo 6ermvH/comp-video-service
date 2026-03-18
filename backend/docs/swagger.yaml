@@ -807,42 +807,6 @@ paths:
       summary: Create a group within a study
       tags:
       - admin
-  /admin/studies/{id}/import:
-    post:
-      consumes:
-      - multipart/form-data
-      parameters:
-      - description: Study ID
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: CSV file
-        in: formData
-        name: file
-        required: true
-        type: file
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties:
-              type: integer
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      security:
-      - BearerAuth: []
-      - CSRFToken: []
-      summary: Import source items from CSV
-      tags:
-      - admin
   /admin/studies/{id}/pairs:
     post:
       consumes:
