@@ -4,8 +4,8 @@ import { useSession } from '../context/SessionContext.jsx'
 import { useToast } from '../context/ToastContext.jsx'
 import SyncVideoPlayer from '../components/SyncVideoPlayer.jsx'
 import ChoicePanel from '../components/ChoicePanel.jsx'
-// import ReasonsSelector from '../components/ReasonsSelector.jsx'
-// import ConfidenceRating from '../components/ConfidenceRating.jsx'
+import ReasonsSelector from '../components/ReasonsSelector.jsx'
+import ConfidenceRating from '../components/ConfidenceRating.jsx'
 import ProgressBar from '../components/ProgressBar.jsx'
 import { useWindowWidth } from '../hooks/useWindowWidth.js'
 
@@ -143,9 +143,9 @@ export default function TaskPage({ isPractice = false }) {
   }
 
   const tieEnabled    = studyMeta?.tie_option_enabled ?? true
-  // const showReasons   = studyMeta?.reasons_enabled    ?? true
-  // const showConfidence = studyMeta?.confidence_enabled ?? true
-  // const hasDetailedFeedback = choice && choice !== 'tie'
+  const showReasons   = studyMeta?.reasons_enabled    ?? true
+  const showConfidence = studyMeta?.confidence_enabled ?? true
+  const hasDetailedFeedback = choice && choice !== 'tie'
 
   return (
     <div style={{
@@ -195,7 +195,7 @@ export default function TaskPage({ isPractice = false }) {
       <div className="card" style={{
         width: '100%',
         maxWidth: '980px',
-        margin: '4px auto 0',
+        margin: '60px auto 0',
         padding: '12px 16px',
         display: 'flex',
         flexDirection: 'column',
@@ -206,31 +206,14 @@ export default function TaskPage({ isPractice = false }) {
           <p style={{ fontSize: '13px', color: 'var(--color-text-muted)', marginBottom: '8px', whiteSpace: 'pre-line', lineHeight: 1.5 }}>
             {'Какое видео выглядит лучше в целом ?\nОриентируйтесь на правдоподобие эффекта, стабильность, отсутствие артефактов и общую визуальную целостность.'}
           </p>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '12px',
-            flexWrap: 'wrap',
-          }}>
-            <ChoicePanel
-              choice={choice}
-              onChange={setChoice}
-              disabled={submitting}
-              tieEnabled={tieEnabled}
-            />
-            <button
-              className="btn btn-primary"
-              onClick={handleSubmit}
-              disabled={!choice || submitting}
-              style={{ minWidth: '140px', padding: '10px 18px' }}
-            >
-              Следующее
-            </button>
-          </div>
+          <ChoicePanel
+            choice={choice}
+            onChange={setChoice}
+            disabled={submitting}
+            tieEnabled={tieEnabled}
+          />
         </div>
 
-        {/*
         {showReasons && hasDetailedFeedback && (
           <ReasonsSelector
             selected={reasons}
@@ -261,8 +244,19 @@ export default function TaskPage({ isPractice = false }) {
               {submitting ? 'Отправка…' : 'Следующее →'}
             </button>
           </div>
-        ) : null}
-        */}
+        ) : (
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div />
+            <button
+              className="btn btn-primary"
+              onClick={handleSubmit}
+              disabled={!choice || submitting}
+              style={{ minWidth: '140px', padding: '10px 18px' }}
+            >
+              {submitting ? 'Отправка…' : 'Следующее →'}
+            </button>
+          </div>
+        )}
 
         {currentTask.is_practice && (
           <div style={{
