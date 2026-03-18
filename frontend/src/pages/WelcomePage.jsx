@@ -23,6 +23,8 @@ export default function WelcomePage() {
   }
 
   const isValid = studyId.trim() && consent
+  const introWidth = 'min(620px, 100%)'
+  const introFontSize = '16px'
 
   return (
     <div style={{
@@ -35,23 +37,53 @@ export default function WelcomePage() {
     }}>
       <div style={{ maxWidth: 'min(520px, 100%)', width: '100%' }}>
 
-        <div style={{ textAlign: 'center', marginBottom: '40px' }}>
-          <h1 style={{ fontSize: '28px', fontWeight: 700, marginBottom: '12px' }}>
-            Оценка качества видеоэффектов
+        <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+          <h1 style={{ fontSize: '28px', fontWeight: 700, marginBottom: '28px', marginTop: '-40px' }}>
+            Оценка качества генерации видео
           </h1>
-          <p style={{ color: 'var(--color-text-muted)', lineHeight: 1.7 }}>
-            Вам будут показаны пары видео. Ваша задача — оценить, какое из двух
-            видео выглядит более реалистично и качественно.
+          <p style={{
+            color: 'var(--color-text-muted)',
+            fontSize: introFontSize,
+            lineHeight: 1.7,
+            textAlign: 'left',
+            maxWidth: introWidth,
+            margin: '0 auto',
+          }}>
+            В данном исследовании будут представлены пары видео, сгенерированные
+            разными способами, но имеющие одинаковое исходное изображение.
+            Необходимо выбрать лучшее на ваш взгляд видео в каждой паре.
           </p>
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '24px',
-            marginTop: '16px', fontSize: '14px', color: 'var(--color-text-muted)' }}>
-            <span>⏱ ~15–20 минут</span>
-            <span>🖥 Только ПК / ноутбук</span>
-            <span>🔊 Звук не требуется</span>
+          <p style={{
+            color: 'var(--color-text-muted)',
+            fontSize: introFontSize,
+            lineHeight: 1.7,
+            textAlign: 'left',
+            maxWidth: introWidth,
+            margin: '12px auto 0',
+          }}>
+            Участие является добровольным, исследование полностью анонимно.
+            Полученные данные будут использованы только для научных целей.
+          </p>
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '12px',
+            marginTop: '12px',
+            fontSize: introFontSize,
+            lineHeight: 1.7,
+            color: 'var(--color-text-muted)',
+            width: introWidth,
+            marginLeft: 'auto',
+            marginRight: 'auto',
+            alignItems: 'flex-start',
+          }}>
+            <span>Средняя продолжительность исследования — 15 минут.</span>
+            <span>Звук не требуется.</span>
           </div>
         </div>
 
-        <form onSubmit={handleStart} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+        <form onSubmit={handleStart} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
 
           {!searchParams.get('study_id') && (
             <div>
@@ -69,7 +101,8 @@ export default function WelcomePage() {
 
           <label style={{
             display: 'flex', gap: '12px', alignItems: 'flex-start',
-            cursor: 'pointer', fontSize: '14px', lineHeight: 1.6,
+            cursor: 'pointer', fontSize: introFontSize, lineHeight: 1.7,
+            marginTop: '18px',
           }}>
             <input
               type="checkbox"
@@ -78,8 +111,8 @@ export default function WelcomePage() {
               style={{ marginTop: '3px', width: '16px', height: '16px', flexShrink: 0 }}
             />
             <span style={{ color: 'var(--color-text-muted)' }}>
-              Я согласен(на) на участие в исследовании. Мои анонимные ответы будут
-              использованы только для научных целей.
+              Я ознакомился(-ась) с информацией и согласен(-на) принять участие
+              в исследовании.
             </span>
           </label>
 
@@ -102,7 +135,7 @@ export default function WelcomePage() {
             disabled={!isValid || loading}
             style={{ padding: '16px', fontSize: '16px', marginTop: '8px', width: '100%' }}
           >
-            {loading ? 'Запуск…' : 'Начать участие →'}
+            {loading ? 'Запуск…' : 'Далее'}
           </button>
         </form>
       </div>
