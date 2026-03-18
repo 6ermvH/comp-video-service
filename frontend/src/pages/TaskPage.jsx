@@ -4,8 +4,6 @@ import { useSession } from '../context/SessionContext.jsx'
 import { useToast } from '../context/ToastContext.jsx'
 import SyncVideoPlayer from '../components/SyncVideoPlayer.jsx'
 import ChoicePanel from '../components/ChoicePanel.jsx'
-// import ReasonsSelector from '../components/ReasonsSelector.jsx'
-// import ConfidenceRating from '../components/ConfidenceRating.jsx'
 import ProgressBar from '../components/ProgressBar.jsx'
 import { useWindowWidth } from '../hooks/useWindowWidth.js'
 
@@ -142,10 +140,7 @@ export default function TaskPage({ isPractice = false }) {
     )
   }
 
-  const tieEnabled    = studyMeta?.tie_option_enabled ?? true
-  // const showReasons   = studyMeta?.reasons_enabled    ?? true
-  // const showConfidence = studyMeta?.confidence_enabled ?? true
-  // const hasDetailedFeedback = choice && choice !== 'tie'
+  const tieEnabled = studyMeta?.tie_option_enabled ?? true
 
   return (
     <div style={{
@@ -229,40 +224,6 @@ export default function TaskPage({ isPractice = false }) {
             </button>
           </div>
         </div>
-
-        {/*
-        {showReasons && hasDetailedFeedback && (
-          <ReasonsSelector
-            selected={reasons}
-            onChange={setReasons}
-            disabled={submitting}
-          />
-        )}
-
-        {showConfidence && hasDetailedFeedback ? (
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'flex-end',
-            gap: '16px',
-            flexWrap: 'wrap',
-          }}>
-            <ConfidenceRating
-              value={confidence}
-              onChange={setConfidence}
-              disabled={submitting}
-            />
-            <button
-              className="btn btn-primary"
-              onClick={handleSubmit}
-              disabled={!choice || submitting}
-              style={{ minWidth: '140px', padding: '10px 18px' }}
-            >
-              {submitting ? 'Отправка…' : 'Следующее →'}
-            </button>
-          </div>
-        ) : null}
-        */}
 
         {currentTask.is_practice && (
           <div style={{

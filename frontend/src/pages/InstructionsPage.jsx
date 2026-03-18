@@ -55,24 +55,6 @@ export default function InstructionsPage() {
                 </ul>
               </section>
 
-              {/*
-              <hr style={{ border: 'none', borderTop: '1px solid var(--color-border)' }} />
-
-              <section>
-                <h3 style={{ fontSize: '17px', marginBottom: '10px', color: 'var(--color-primary-h)' }}>
-                  Управление
-                </h3>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '8px',
-                  fontSize: '14px', color: 'var(--color-text-muted)' }}>
-                  <span><kbd style={kbdStyle}>1</kbd> — Видео A лучше</span>
-                  <span><kbd style={kbdStyle}>2</kbd> — Видео B лучше</span>
-                  <span><kbd style={kbdStyle}>0</kbd> — Равны</span>
-                  <span><kbd style={kbdStyle}>R</kbd> — Повторить оба</span>
-                  <span><kbd style={kbdStyle}>N</kbd> / Enter — Следующее</span>
-                  <span><kbd style={kbdStyle}>Space</kbd> — Пауза / Воспроизведение</span>
-                </div>
-              </section>
-              */}
             </div>
           </div>
         )}
@@ -91,14 +73,3 @@ export default function InstructionsPage() {
   )
 }
 
-// const kbdStyle = {
-//   display: 'inline-block',
-//   padding: '2px 8px',
-//   background: 'var(--color-surface-2)',
-//   border: '1px solid var(--color-border)',
-//   borderRadius: '4px',
-//   fontFamily: 'monospace',
-//   fontSize: '13px',
-//   color: 'var(--color-text)',
-//   marginRight: '6px',
-// }
