@@ -224,7 +224,7 @@ export default function TaskPage({ isPractice = false }) {
               className="btn btn-primary"
               onClick={handleSubmit}
               disabled={!choice || submitting}
-              style={{ minWidth: '140px', padding: '10px 18px' }}
+              style={{ minWidth: '128px', padding: '8px 16px', fontSize: '14px' }}
             >
               {submitting ? 'Отправка…' : 'Следующее'}
             </button>

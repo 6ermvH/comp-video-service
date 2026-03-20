@@ -119,7 +119,7 @@ const SyncVideoPlayer = forwardRef(function SyncVideoPlayer(
         gap: '0px',
         flex: '1 1 auto',
         minHeight: 0,
-        height: 'clamp(480px, 68vh, 900px)',
+        height: 'clamp(510px, 71vh, 930px)',
       }
 
   return (
@@ -206,7 +206,7 @@ const SyncVideoPlayer = forwardRef(function SyncVideoPlayer(
             className="btn btn-ghost"
             onClick={togglePlayPause}
             disabled={!bothReady}
-            style={{ width: isMobile ? '100%' : '150px', height: '38px', padding: '8px 12px', justifyContent: 'center', fontSize: '14px', lineHeight: 1 }}
+            style={{ width: isMobile ? '100%' : '138px', height: '34px', padding: '6px 10px', justifyContent: 'center', fontSize: '13px', lineHeight: 1 }}
           >
             {playing ? '⏸ Пауза' : '▶ Воспроизвести'}
           </button>
@@ -216,7 +216,7 @@ const SyncVideoPlayer = forwardRef(function SyncVideoPlayer(
               onClick={replay}
               disabled={!bothReady}
               title="Повторить (R)"
-              style={{ width: '150px', minHeight: '38px', padding: '8px 12px', justifyContent: 'center', fontSize: '14px' }}
+              style={{ width: '138px', minHeight: '34px', padding: '6px 10px', justifyContent: 'center', fontSize: '13px' }}
             >
               ↺ Повторить
             </button>
