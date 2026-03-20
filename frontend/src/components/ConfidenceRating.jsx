@@ -26,13 +26,13 @@ export default function ConfidenceRating({ value, onChange, disabled }) {
               title={LABELS[n]}
               aria-label={LABELS[n]}
               style={{
-                width: '32px',
-                height: '32px',
+                width: '28px',
+                height: '28px',
                 border: `2px solid ${active ? 'var(--color-warning)' : 'var(--color-border)'}`,
                 borderRadius: 'var(--radius-sm)',
                 background: active ? 'rgba(240,180,41,0.15)' : 'var(--color-surface-2)',
                 color: active ? 'var(--color-warning)' : 'var(--color-text-muted)',
-                fontSize: '13px',
+                fontSize: '12px',
                 fontWeight: 700,
                 cursor: disabled ? 'not-allowed' : 'pointer',
                 transition: 'all 0.15s ease',

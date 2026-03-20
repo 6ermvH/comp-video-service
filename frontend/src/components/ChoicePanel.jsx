@@ -19,15 +19,15 @@ export default function ChoicePanel({ choice, onChange, disabled, tieEnabled = t
             onClick={() => !disabled && onChange(opt.key)}
             disabled={disabled}
             style={{
-              minWidth: '96px',
-              minHeight: '38px',
-              padding: '8px 12px',
+              minWidth: '86px',
+              minHeight: '34px',
+              padding: '6px 10px',
               border: `2px solid ${selected ? opt.color : 'var(--color-border)'}`,
               borderRadius: 'var(--radius-md)',
               background: selected ? `${opt.color}22` : 'var(--color-surface-2)',
               color: selected ? opt.color : 'var(--color-text)',
               fontFamily: 'var(--font-family)',
-              fontSize: '13px',
+              fontSize: '12px',
               fontWeight: 600,
               cursor: disabled ? 'not-allowed' : 'pointer',
               transition: 'all 0.15s ease',

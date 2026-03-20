@@ -3,10 +3,10 @@
  * Only shown after a choice (left/right) is made, not for "tie".
  */
 const REASONS = [
-  { code: 'motion',      label: 'Более правдоподобный эффект' },
-  { code: 'artifacts',   label: 'Меньше артефактов' },
-  { code: 'integration', label: 'Лучшая интеграция в сцену' },
-  { code: 'overall',     label: 'Лучше общее качество' },
+  { code: 'motion',      label: 'Реализм движения объектов' },
+  { code: 'artifacts',   label: 'Количество артефактов' },
+  { code: 'overall',     label: 'Детализация изображения' },
+  { code: 'integration', label: 'Визуальная целостность' },
 ]
 
 const MAX_SELECTED = 2
@@ -24,7 +24,7 @@ export default function ReasonsSelector({ selected, onChange, disabled }) {
   return (
     <div>
       <p style={{ fontSize: '12px', color: 'var(--color-text-muted)', marginBottom: '4px' }}>
-        Причина (необязательно, до {MAX_SELECTED}):
+        Что повлияло на ваш выбор? (необязательно, до {MAX_SELECTED})
       </p>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
         {REASONS.map((r) => {
