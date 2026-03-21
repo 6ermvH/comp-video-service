@@ -52,6 +52,44 @@ func (r *ParticipantRepository) UpdateQualityFlag(ctx context.Context, participa
 	return err
 }
 
+// CountByQualityFlag returns the number of participants with the given quality_flag value.
+func (r *ParticipantRepository) CountByQualityFlag(ctx context.Context, flag string) (int64, error) {
+	var count int64
+	err := r.db.QueryRow(ctx, `
+		SELECT COUNT(*) FROM participants WHERE quality_flag = $1`, flag).Scan(&count)
+	return count, err
+}
+
+// FlaggedParticipants returns all participants whose quality_flag is in ('suspect', 'flagged')
+// together with their response count and average response time.
+func (r *ParticipantRepository) FlaggedParticipants(ctx context.Context) ([]*model.FlaggedParticipant, error) {
+	rows, err := r.db.Query(ctx, `
+		SELECT
+			p.id,
+			p.quality_flag,
+			COUNT(r.id)                                           AS response_count,
+			COALESCE(AVG(r.response_time_ms), 0)::bigint         AS avg_response_ms
+		FROM participants p
+		LEFT JOIN responses r ON r.participant_id = p.id
+		WHERE p.quality_flag IN ('suspect', 'flagged')
+		GROUP BY p.id, p.quality_flag
+		ORDER BY p.quality_flag DESC, avg_response_ms ASC`)
+	if err != nil {
+		return nil, fmt.Errorf("flagged participants query: %w", err)
+	}
+	defer rows.Close()
+
+	var result []*model.FlaggedParticipant
+	for rows.Next() {
+		fp := &model.FlaggedParticipant{}
+		if err := rows.Scan(&fp.ID, &fp.FlagReason, &fp.ResponseCount, &fp.AvgResponseMS); err != nil {
+			return nil, fmt.Errorf("scan flagged participant: %w", err)
+		}
+		result = append(result, fp)
+	}
+	return result, rows.Err()
+}
+
 func scanParticipant(row scanner) (*model.Participant, error) {
 	var p model.Participant
 	err := row.Scan(

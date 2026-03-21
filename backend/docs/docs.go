@@ -1771,6 +1771,23 @@ const docTemplate = `{
                 }
             }
         },
+        "service.FlaggedParticipant": {
+            "type": "object",
+            "properties": {
+                "avg_response_ms": {
+                    "type": "integer"
+                },
+                "flag_reason": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "response_count": {
+                    "type": "integer"
+                }
+            }
+        },
         "service.GroupAnalytics": {
             "type": "object",
             "properties": {
@@ -1846,13 +1863,25 @@ const docTemplate = `{
         "service.QCReport": {
             "type": "object",
             "properties": {
+                "attention_check_failures": {
+                    "type": "integer"
+                },
                 "fast_response_threshold_ms": {
                     "type": "integer"
                 },
                 "fast_responses": {
                     "type": "integer"
                 },
-                "straight_lining_profiles": {
+                "flagged_participants": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/service.FlaggedParticipant"
+                    }
+                },
+                "straight_lining": {
+                    "type": "integer"
+                },
+                "suspect_count": {
                     "type": "integer"
                 },
                 "total_responses": {

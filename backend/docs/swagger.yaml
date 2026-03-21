@@ -311,6 +311,17 @@ definitions:
       tie_rate:
         type: number
     type: object
+  service.FlaggedParticipant:
+    properties:
+      avg_response_ms:
+        type: integer
+      flag_reason:
+        type: string
+      id:
+        type: string
+      response_count:
+        type: integer
+    type: object
   service.GroupAnalytics:
     properties:
       group_id:
@@ -360,11 +371,19 @@ definitions:
     type: object
   service.QCReport:
     properties:
+      attention_check_failures:
+        type: integer
       fast_response_threshold_ms:
         type: integer
       fast_responses:
         type: integer
-      straight_lining_profiles:
+      flagged_participants:
+        items:
+          $ref: '#/definitions/service.FlaggedParticipant'
+        type: array
+      straight_lining:
+        type: integer
+      suspect_count:
         type: integer
       total_responses:
         type: integer

@@ -6,6 +6,8 @@ import (
 
 	"github.com/google/uuid"
 	"go.uber.org/mock/gomock"
+
+	"comp-video-service/backend/internal/model"
 )
 
 func TestQCServiceBuildReportWithGomock(t *testing.T) {
@@ -16,16 +18,27 @@ func TestQCServiceBuildReportWithGomock(t *testing.T) {
 	part := NewMockqcParticipantRepository(ctrl)
 	svc := NewQCService(resp, part)
 
+	fp := &model.FlaggedParticipant{ID: uuid.New(), FlagReason: "flagged", ResponseCount: 5, AvgResponseMS: 300}
+
 	resp.EXPECT().CountTotal(gomock.Any()).Return(int64(100), nil)
 	resp.EXPECT().CountFastResponses(gomock.Any(), 1500).Return(int64(15), nil)
 	resp.EXPECT().StraightLiningParticipants(gomock.Any()).Return(int64(2), nil)
+	part.EXPECT().CountByQualityFlag(gomock.Any(), "flagged").Return(int64(3), nil)
+	part.EXPECT().CountByQualityFlag(gomock.Any(), "suspect").Return(int64(1), nil)
+	part.EXPECT().FlaggedParticipants(gomock.Any()).Return([]*model.FlaggedParticipant{fp}, nil)
 
 	report, err := svc.BuildReport(context.Background())
 	if err != nil {
 		t.Fatalf("BuildReport error: %v", err)
 	}
-	if report.TotalResponses != 100 || report.FastResponses != 15 || report.StraightLiningProfiles != 2 {
+	if report.TotalResponses != 100 || report.FastResponses != 15 || report.StraightLining != 2 {
 		t.Fatalf("unexpected report: %+v", report)
+	}
+	if report.AttentionCheckFailures != 3 || report.SuspectCount != 1 {
+		t.Fatalf("unexpected qc counts: %+v", report)
+	}
+	if len(report.FlaggedParticipants) != 1 || report.FlaggedParticipants[0].FlagReason != "flagged" {
+		t.Fatalf("unexpected flagged participants: %+v", report.FlaggedParticipants)
 	}
 }
 

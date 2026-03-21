@@ -15,6 +15,8 @@ import (
 
 	uuid "github.com/google/uuid"
 	gomock "go.uber.org/mock/gomock"
+
+	model "comp-video-service/backend/internal/model"
 )
 
 // MockqcResponseRepository is a mock of qcResponseRepository interface.
@@ -168,4 +170,34 @@ func (m *MockqcParticipantRepository) UpdateQualityFlag(ctx context.Context, par
 func (mr *MockqcParticipantRepositoryMockRecorder) UpdateQualityFlag(ctx, participantID, qualityFlag any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateQualityFlag", reflect.TypeOf((*MockqcParticipantRepository)(nil).UpdateQualityFlag), ctx, participantID, qualityFlag)
+}
+
+// CountByQualityFlag mocks base method.
+func (m *MockqcParticipantRepository) CountByQualityFlag(ctx context.Context, flag string) (int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CountByQualityFlag", ctx, flag)
+	ret0, _ := ret[0].(int64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CountByQualityFlag indicates an expected call of CountByQualityFlag.
+func (mr *MockqcParticipantRepositoryMockRecorder) CountByQualityFlag(ctx, flag any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountByQualityFlag", reflect.TypeOf((*MockqcParticipantRepository)(nil).CountByQualityFlag), ctx, flag)
+}
+
+// FlaggedParticipants mocks base method.
+func (m *MockqcParticipantRepository) FlaggedParticipants(ctx context.Context) ([]*model.FlaggedParticipant, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FlaggedParticipants", ctx)
+	ret0, _ := ret[0].([]*model.FlaggedParticipant)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FlaggedParticipants indicates an expected call of FlaggedParticipants.
+func (mr *MockqcParticipantRepositoryMockRecorder) FlaggedParticipants(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FlaggedParticipants", reflect.TypeOf((*MockqcParticipantRepository)(nil).FlaggedParticipants), ctx)
 }

@@ -4,14 +4,22 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+
+	"comp-video-service/backend/internal/model"
 )
 
-// QCReport is a lightweight quality control snapshot.
+// FlaggedParticipant is re-exported from the model layer for Swagger docs.
+type FlaggedParticipant = model.FlaggedParticipant
+
+// QCReport is a quality control snapshot.
 type QCReport struct {
-	TotalResponses          int64 `json:"total_responses"`
-	FastResponses           int64 `json:"fast_responses"`
-	StraightLiningProfiles  int64 `json:"straight_lining_profiles"`
-	FastResponseThresholdMS int   `json:"fast_response_threshold_ms"`
+	TotalResponses          int64                `json:"total_responses"`
+	FastResponses           int64                `json:"fast_responses"`
+	StraightLining          int64                `json:"straight_lining"`
+	AttentionCheckFailures  int64                `json:"attention_check_failures"`
+	SuspectCount            int64                `json:"suspect_count"`
+	FastResponseThresholdMS int                  `json:"fast_response_threshold_ms"`
+	FlaggedParticipants     []*FlaggedParticipant `json:"flagged_participants"`
 }
 
 // QCService provides respondent quality checks.
@@ -31,6 +39,8 @@ type qcResponseRepository interface {
 
 type qcParticipantRepository interface {
 	UpdateQualityFlag(ctx context.Context, participantID uuid.UUID, qualityFlag string) error
+	CountByQualityFlag(ctx context.Context, flag string) (int64, error)
+	FlaggedParticipants(ctx context.Context) ([]*model.FlaggedParticipant, error)
 }
 
 //go:generate go run go.uber.org/mock/mockgen -source=qc.go -destination=qc_mocks_test.go -package=service
@@ -44,20 +54,44 @@ func (s *QCService) BuildReport(ctx context.Context) (*QCReport, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	fastThreshold := 1500
 	fast, err := s.responseRepo.CountFastResponses(ctx, fastThreshold)
 	if err != nil {
 		return nil, err
 	}
+
 	straight, err := s.responseRepo.StraightLiningParticipants(ctx)
 	if err != nil {
 		return nil, err
 	}
+
+	attentionFailed, err := s.participantRepo.CountByQualityFlag(ctx, "flagged")
+	if err != nil {
+		return nil, err
+	}
+
+	suspect, err := s.participantRepo.CountByQualityFlag(ctx, "suspect")
+	if err != nil {
+		return nil, err
+	}
+
+	flagged, err := s.participantRepo.FlaggedParticipants(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if flagged == nil {
+		flagged = []*FlaggedParticipant{}
+	}
+
 	return &QCReport{
 		TotalResponses:          total,
 		FastResponses:           fast,
-		StraightLiningProfiles:  straight,
+		StraightLining:          straight,
+		AttentionCheckFailures:  attentionFailed,
+		SuspectCount:            suspect,
 		FastResponseThresholdMS: fastThreshold,
+		FlaggedParticipants:     flagged,
 	}, nil
 }
 
