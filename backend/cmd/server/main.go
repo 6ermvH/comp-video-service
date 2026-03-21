@@ -106,9 +106,12 @@ func main() {
 		c.Next()
 	})
 
-	r.GET("/health", func(c *gin.Context) {
+	healthCheck := func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
-	})
+	}
+	r.GET("/health", healthCheck)
+	r.HEAD("/", healthCheck)
+	r.GET("/", healthCheck)
 
 	api := r.Group("/api")
 
