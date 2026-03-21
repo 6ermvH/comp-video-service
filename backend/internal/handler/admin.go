@@ -54,6 +54,7 @@ type qcService interface {
 type exportService interface {
 	ExportCSV(ctx context.Context) ([]byte, error)
 	ExportJSON(ctx context.Context) ([]byte, error)
+	ExportStudyCSV(ctx context.Context, studyID uuid.UUID) ([]byte, error)
 }
 
 // AdminHandler handles all admin-only endpoints.
@@ -664,6 +665,35 @@ func (h *AdminHandler) ExportJSON(c *gin.Context) {
 		return
 	}
 	c.Data(http.StatusOK, "application/json", payload)
+}
+
+// ExportStudyCSV godoc
+// @Summary      Export responses for a specific study as CSV
+// @Description  Returns a CSV with computed columns (candidate_position, candidate_chosen, reason_*, is_suspect) for all responses in the given study.
+// @Tags         admin
+// @Produce      text/csv
+// @Security     BearerAuth
+// @Security     CSRFToken
+// @Param        id   path      string  true  "Study ID"
+// @Success      200  {string}  string
+// @Failure      400  {object}  map[string]string
+// @Failure      500  {object}  map[string]string
+// @Router       /admin/export/study/{id}/csv [get]
+func (h *AdminHandler) ExportStudyCSV(c *gin.Context) {
+	studyID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid study id"})
+		return
+	}
+	payload, err := h.exportSvc.ExportStudyCSV(c.Request.Context(), studyID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	filename := fmt.Sprintf("study_%s_responses.csv", studyID.String())
+	c.Header("Content-Type", "text/csv")
+	c.Header("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, filename))
+	c.Data(http.StatusOK, "text/csv", payload)
 }
 
 // ImportArchive godoc

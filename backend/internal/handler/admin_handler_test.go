@@ -114,12 +114,19 @@ func (m *mockQCService) BuildReport(ctx context.Context) (*service.QCReport, err
 }
 
 type mockExportService struct {
-	csvFn  func(context.Context) ([]byte, error)
-	jsonFn func(context.Context) ([]byte, error)
+	csvFn        func(context.Context) ([]byte, error)
+	jsonFn       func(context.Context) ([]byte, error)
+	studyCSVFn   func(context.Context, uuid.UUID) ([]byte, error)
 }
 
 func (m *mockExportService) ExportCSV(ctx context.Context) ([]byte, error)  { return m.csvFn(ctx) }
 func (m *mockExportService) ExportJSON(ctx context.Context) ([]byte, error) { return m.jsonFn(ctx) }
+func (m *mockExportService) ExportStudyCSV(ctx context.Context, studyID uuid.UUID) ([]byte, error) {
+	if m.studyCSVFn != nil {
+		return m.studyCSVFn(ctx, studyID)
+	}
+	return []byte("response_id,participant_id\n"), nil
+}
 
 type mockImportService struct {
 	importFn func(context.Context, service.ImportArchiveRequest) (*service.ImportArchiveResult, error)
@@ -803,6 +810,73 @@ func TestAdminHandlerImportArchiveNoImportSvc(t *testing.T) {
 	if w.Code != http.StatusInternalServerError {
 		t.Fatalf("expected 500 when importSvc is nil, got %d", w.Code)
 	}
+}
+
+func TestAdminHandlerExportStudyCSV(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	studyID := uuid.New()
+
+	t.Run("success", func(t *testing.T) {
+		h := NewAdminHandler(
+			&mockStudyService{},
+			&mockAssetService{},
+			&mockAnalyticsService{},
+			&mockQCService{},
+			&mockExportService{
+				studyCSVFn: func(_ context.Context, id uuid.UUID) ([]byte, error) {
+					if id != studyID {
+						t.Fatalf("unexpected study id: %s", id)
+					}
+					return []byte("response_id,participant_id\nr1,p1\n"), nil
+				},
+			},
+		)
+		r := gin.New()
+		r.GET("/export/study/:id/csv", h.ExportStudyCSV)
+
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/export/study/"+studyID.String()+"/csv", nil))
+		if w.Code != http.StatusOK {
+			t.Fatalf("expected 200, got %d: %s", w.Code, w.Body.String())
+		}
+		if ct := w.Header().Get("Content-Type"); ct != "text/csv" {
+			t.Fatalf("expected text/csv, got %s", ct)
+		}
+	})
+
+	t.Run("invalid id", func(t *testing.T) {
+		h := NewAdminHandler(&mockStudyService{}, &mockAssetService{}, &mockAnalyticsService{}, &mockQCService{}, &mockExportService{})
+		r := gin.New()
+		r.GET("/export/study/:id/csv", h.ExportStudyCSV)
+
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/export/study/not-a-uuid/csv", nil))
+		if w.Code != http.StatusBadRequest {
+			t.Fatalf("expected 400, got %d", w.Code)
+		}
+	})
+
+	t.Run("service error", func(t *testing.T) {
+		h := NewAdminHandler(
+			&mockStudyService{},
+			&mockAssetService{},
+			&mockAnalyticsService{},
+			&mockQCService{},
+			&mockExportService{
+				studyCSVFn: func(context.Context, uuid.UUID) ([]byte, error) {
+					return nil, errors.New("db error")
+				},
+			},
+		)
+		r := gin.New()
+		r.GET("/export/study/:id/csv", h.ExportStudyCSV)
+
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/export/study/"+studyID.String()+"/csv", nil))
+		if w.Code != http.StatusInternalServerError {
+			t.Fatalf("expected 500, got %d", w.Code)
+		}
+	})
 }
 
 func TestAdminHandlerGetAssetURL(t *testing.T) {

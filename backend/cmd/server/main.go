@@ -148,6 +148,7 @@ func main() {
 
 		adminGroup.GET("/export/csv", adminH.ExportCSV)
 		adminGroup.GET("/export/json", adminH.ExportJSON)
+		adminGroup.GET("/export/study/:id/csv", adminH.ExportStudyCSV)
 	}
 
 	log.Printf("starting server on :%s", cfg.Port)

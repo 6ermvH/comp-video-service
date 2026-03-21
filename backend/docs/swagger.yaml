@@ -789,6 +789,41 @@ paths:
       summary: Export responses as JSON
       tags:
       - admin
+  /admin/export/study/{id}/csv:
+    get:
+      description: Returns a CSV with computed columns (candidate_position, candidate_chosen,
+        reason_*, is_suspect) for all responses in the given study.
+      parameters:
+      - description: Study ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - text/csv
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      - CSRFToken: []
+      summary: Export responses for a specific study as CSV
+      tags:
+      - admin
   /admin/login:
     post:
       consumes:
