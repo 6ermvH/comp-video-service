@@ -322,6 +322,21 @@ definitions:
       tie_rate:
         type: number
     type: object
+  service.ImportArchiveResult:
+    properties:
+      errors:
+        items:
+          type: string
+        type: array
+      groups_created:
+        type: integer
+      pairs_created:
+        type: integer
+      study:
+        $ref: '#/definitions/model.Study'
+      videos_uploaded:
+        type: integer
+    type: object
   service.PairStat:
     properties:
       baseline_wins:
@@ -956,6 +971,68 @@ paths:
       - BearerAuth: []
       - CSRFToken: []
       summary: Create a source item pair from two existing video assets
+      tags:
+      - admin
+  /admin/studies/import-archive:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Accepts a ZIP archive containing MP4 files named <group>_<name>_<baseline|candidate>.mp4.
+      parameters:
+      - description: ZIP archive
+        in: formData
+        name: file
+        required: true
+        type: file
+      - description: Study name
+        in: formData
+        name: name
+        required: true
+        type: string
+      - description: Effect type (flooding, explosion, mixed)
+        in: formData
+        name: effect_type
+        required: true
+        type: string
+      - description: Max tasks per participant
+        in: formData
+        name: max_tasks_per_participant
+        type: integer
+      - description: Enable tie option
+        in: formData
+        name: tie_option_enabled
+        type: boolean
+      - description: Enable reasons
+        in: formData
+        name: reasons_enabled
+        type: boolean
+      - description: Enable confidence
+        in: formData
+        name: confidence_enabled
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/service.ImportArchiveResult'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      - CSRFToken: []
+      summary: Import a study from a ZIP archive of MP4 files
       tags:
       - admin
   /session/{token}/complete:
