@@ -158,7 +158,7 @@ func main() {
 }
 
 func waitForDB(ctx context.Context, db *pgxpool.Pool) error {
-	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 120*time.Second)
 	defer cancel()
 	for {
 		if err := db.Ping(ctx); err == nil {
