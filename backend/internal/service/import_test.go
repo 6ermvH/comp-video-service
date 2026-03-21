@@ -52,6 +52,9 @@ func (m *mockSourceItemRepo) Create(ctx context.Context, item *model.SourceItem)
 func (m *mockSourceItemRepo) ListWithFilters(ctx context.Context, studyID *uuid.UUID, groupID *uuid.UUID) ([]*model.SourceItem, error) {
 	return nil, nil
 }
+func (m *mockSourceItemRepo) ListWithDetails(ctx context.Context, studyID *uuid.UUID, groupID *uuid.UUID) ([]*model.SourceItemDetail, error) {
+	return nil, nil
+}
 func (m *mockSourceItemRepo) Delete(ctx context.Context, id uuid.UUID) (bool, error) {
 	return false, nil
 }

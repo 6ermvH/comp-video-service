@@ -34,6 +34,7 @@ type groupRepository interface {
 type sourceItemRepository interface {
 	Create(ctx context.Context, item *model.SourceItem) (*model.SourceItem, error)
 	ListWithFilters(ctx context.Context, studyID *uuid.UUID, groupID *uuid.UUID) ([]*model.SourceItem, error)
+	ListWithDetails(ctx context.Context, studyID *uuid.UUID, groupID *uuid.UUID) ([]*model.SourceItemDetail, error)
 	Delete(ctx context.Context, id uuid.UUID) (bool, error)
 }
 
@@ -102,8 +103,8 @@ func (s *StudyService) ListGroups(ctx context.Context, studyID uuid.UUID) ([]*mo
 	return s.groupRepo.ListByStudy(ctx, studyID)
 }
 
-func (s *StudyService) ListSourceItems(ctx context.Context, studyID *uuid.UUID, groupID *uuid.UUID) ([]*model.SourceItem, error) {
-	return s.sourceItemRepo.ListWithFilters(ctx, studyID, groupID)
+func (s *StudyService) ListSourceItems(ctx context.Context, studyID *uuid.UUID, groupID *uuid.UUID) ([]*model.SourceItemDetail, error) {
+	return s.sourceItemRepo.ListWithDetails(ctx, studyID, groupID)
 }
 
 func (s *StudyService) ListAssets(ctx context.Context, page, perPage int, search string) ([]*model.Video, int, error) {

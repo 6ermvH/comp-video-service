@@ -91,6 +91,54 @@ func (r *SourceItemRepository) ListWithFilters(ctx context.Context, studyID *uui
 	return out, rows.Err()
 }
 
+func (r *SourceItemRepository) ListWithDetails(ctx context.Context, studyID *uuid.UUID, groupID *uuid.UUID) ([]*model.SourceItemDetail, error) {
+	q := `
+		SELECT
+			si.id, si.study_id, si.group_id, g.name AS group_name,
+			si.source_image_id, si.pair_code, si.difficulty,
+			si.is_attention_check, si.notes, si.created_at,
+			(SELECT COUNT(*) FROM video_assets va WHERE va.source_item_id = si.id) AS asset_count,
+			(SELECT COUNT(*) FROM responses r
+			 JOIN pair_presentations pp ON pp.id = r.pair_presentation_id
+			 WHERE pp.source_item_id = si.id) AS response_count
+		FROM source_items si
+		JOIN groups g ON g.id = si.group_id
+		WHERE 1=1`
+	args := make([]any, 0, 2)
+	idx := 1
+	if studyID != nil {
+		q += fmt.Sprintf(" AND si.study_id = $%d", idx)
+		args = append(args, *studyID)
+		idx++
+	}
+	if groupID != nil {
+		q += fmt.Sprintf(" AND si.group_id = $%d", idx)
+		args = append(args, *groupID)
+	}
+	q += " ORDER BY si.created_at ASC"
+
+	rows, err := r.db.Query(ctx, q, args...)
+	if err != nil {
+		return nil, fmt.Errorf("list source items with details: %w", err)
+	}
+	defer rows.Close()
+
+	out := make([]*model.SourceItemDetail, 0)
+	for rows.Next() {
+		var d model.SourceItemDetail
+		if err := rows.Scan(
+			&d.ID, &d.StudyID, &d.GroupID, &d.GroupName,
+			&d.SourceImageID, &d.PairCode, &d.Difficulty,
+			&d.IsAttentionCheck, &d.Notes, &d.CreatedAt,
+			&d.AssetCount, &d.ResponseCount,
+		); err != nil {
+			return nil, fmt.Errorf("scan source item detail: %w", err)
+		}
+		out = append(out, &d)
+	}
+	return out, rows.Err()
+}
+
 // Delete removes a source item and unlinks its video assets (sets source_item_id = NULL).
 // Returns false if the source item has responses — deletion is blocked.
 func (r *SourceItemRepository) Delete(ctx context.Context, id uuid.UUID) (deleted bool, err error) {

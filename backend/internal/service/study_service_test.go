@@ -41,7 +41,7 @@ func TestStudyServiceBasicMethodsWithGomock(t *testing.T) {
 		t.Fatalf("ListGroups: %v", err)
 	}
 
-	sourceRepo.EXPECT().ListWithFilters(gomock.Any(), gomock.Nil(), gomock.Nil()).Return([]*model.SourceItem{}, nil)
+	sourceRepo.EXPECT().ListWithDetails(gomock.Any(), gomock.Nil(), gomock.Nil()).Return([]*model.SourceItemDetail{}, nil)
 	if _, err := svc.ListSourceItems(context.Background(), nil, nil); err != nil {
 		t.Fatalf("ListSourceItems: %v", err)
 	}

@@ -792,6 +792,7 @@ paths:
       - auth
   /admin/source-items:
     get:
+      description: Returns pairs with group_name, asset_count and response_count.
       parameters:
       - description: Filter by study UUID
         in: query
@@ -812,7 +813,7 @@ paths:
       security:
       - BearerAuth: []
       - CSRFToken: []
-      summary: List source items (pairs)
+      summary: List source items (pairs) with enriched data
       tags:
       - admin
   /admin/source-items/{id}:

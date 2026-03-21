@@ -25,7 +25,7 @@ type mockStudyService struct {
 	updateStudyFn     func(context.Context, uuid.UUID, *model.UpdateStudyRequest) (*model.Study, error)
 	listGroupsFn      func(context.Context, uuid.UUID) ([]*model.Group, error)
 	createGroupFn     func(context.Context, uuid.UUID, *model.CreateGroupRequest) (*model.Group, error)
-	listSourceItemsFn func(context.Context, *uuid.UUID, *uuid.UUID) ([]*model.SourceItem, error)
+	listSourceItemsFn func(context.Context, *uuid.UUID, *uuid.UUID) ([]*model.SourceItemDetail, error)
 	listAssetsFn      func(context.Context, int, int, string) ([]*model.Video, int, error)
 	listFreeAssetsFn  func(context.Context) ([]*model.Video, error)
 	createPairFn      func(context.Context, uuid.UUID, *model.CreatePairRequest) (*model.SourceItem, error)
@@ -47,7 +47,7 @@ func (m *mockStudyService) ListGroups(ctx context.Context, id uuid.UUID) ([]*mod
 func (m *mockStudyService) CreateGroup(ctx context.Context, id uuid.UUID, r *model.CreateGroupRequest) (*model.Group, error) {
 	return m.createGroupFn(ctx, id, r)
 }
-func (m *mockStudyService) ListSourceItems(ctx context.Context, sid *uuid.UUID, gid *uuid.UUID) ([]*model.SourceItem, error) {
+func (m *mockStudyService) ListSourceItems(ctx context.Context, sid *uuid.UUID, gid *uuid.UUID) ([]*model.SourceItemDetail, error) {
 	return m.listSourceItemsFn(ctx, sid, gid)
 }
 func (m *mockStudyService) ListAssets(ctx context.Context, page, perPage int, search string) ([]*model.Video, int, error) {
@@ -293,7 +293,7 @@ func TestAdminHandlerListSourceItemsInvalidQueryAndExportErrors(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	h := NewAdminHandler(
 		&mockStudyService{
-			listSourceItemsFn: func(context.Context, *uuid.UUID, *uuid.UUID) ([]*model.SourceItem, error) {
+			listSourceItemsFn: func(context.Context, *uuid.UUID, *uuid.UUID) ([]*model.SourceItemDetail, error) {
 				return nil, errors.New("boom")
 			},
 		},
@@ -468,8 +468,8 @@ func TestAdminHandlerCreateGroupAndListSourceItems(t *testing.T) {
 			createGroupFn: func(context.Context, uuid.UUID, *model.CreateGroupRequest) (*model.Group, error) {
 				return &model.Group{ID: uuid.New(), Name: "G"}, nil
 			},
-			listSourceItemsFn: func(context.Context, *uuid.UUID, *uuid.UUID) ([]*model.SourceItem, error) {
-				return []*model.SourceItem{{ID: uuid.New()}}, nil
+			listSourceItemsFn: func(context.Context, *uuid.UUID, *uuid.UUID) ([]*model.SourceItemDetail, error) {
+				return []*model.SourceItemDetail{{ID: uuid.New(), GroupName: "G"}}, nil
 			},
 		},
 		&mockAssetService{},

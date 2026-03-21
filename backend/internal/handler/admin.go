@@ -23,7 +23,7 @@ type studyService interface {
 	UpdateStudy(ctx context.Context, id uuid.UUID, req *model.UpdateStudyRequest) (*model.Study, error)
 	ListGroups(ctx context.Context, studyID uuid.UUID) ([]*model.Group, error)
 	CreateGroup(ctx context.Context, studyID uuid.UUID, req *model.CreateGroupRequest) (*model.Group, error)
-	ListSourceItems(ctx context.Context, studyID *uuid.UUID, groupID *uuid.UUID) ([]*model.SourceItem, error)
+	ListSourceItems(ctx context.Context, studyID *uuid.UUID, groupID *uuid.UUID) ([]*model.SourceItemDetail, error)
 	ListAssets(ctx context.Context, page, perPage int, search string) ([]*model.Video, int, error)
 	ListFreeAssets(ctx context.Context) ([]*model.Video, error)
 	CreatePair(ctx context.Context, studyID uuid.UUID, req *model.CreatePairRequest) (*model.SourceItem, error)
@@ -300,7 +300,8 @@ func (h *AdminHandler) UploadAsset(c *gin.Context) {
 }
 
 // ListSourceItems godoc
-// @Summary      List source items (pairs)
+// @Summary      List source items (pairs) with enriched data
+// @Description  Returns pairs with group_name, asset_count and response_count.
 // @Tags         admin
 // @Produce      json
 // @Security     BearerAuth

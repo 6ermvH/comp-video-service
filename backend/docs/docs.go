@@ -570,13 +570,14 @@ const docTemplate = `{
                         "CSRFToken": []
                     }
                 ],
+                "description": "Returns pairs with group_name, asset_count and response_count.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "admin"
                 ],
-                "summary": "List source items (pairs)",
+                "summary": "List source items (pairs) with enriched data",
                 "parameters": [
                     {
                         "type": "string",
