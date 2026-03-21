@@ -81,11 +81,12 @@ func main() {
 	studySvc := service.NewStudyService(studyRepo, groupRepo, sourceItemRepo, videoRepo)
 	analyticsSvc := service.NewAnalyticsService(db, responseRepo)
 	exportSvc := service.NewExportService(db)
+	importSvc := service.NewImportService(studyRepo, groupRepo, sourceItemRepo, videoRepo, s3Client)
 
 	authH := handler.NewAuthHandler(adminRepo, cfg.JWTSecret)
 	sessionH := handler.NewSessionHandler(sessionSvc)
 	taskH := handler.NewTaskHandler(sessionSvc, pairRepo, interactionRepo)
-	adminH := handler.NewAdminHandler(studySvc, assetSvc, analyticsSvc, qcSvc, exportSvc)
+	adminH := handler.NewAdminHandlerWithImport(studySvc, assetSvc, analyticsSvc, qcSvc, exportSvc, importSvc)
 
 	if os.Getenv("GIN_MODE") == "" {
 		gin.SetMode(gin.ReleaseMode)
@@ -126,6 +127,7 @@ func main() {
 		adminGroup.GET("/studies", adminH.ListStudies)
 		adminGroup.POST("/studies", adminH.CreateStudy)
 		adminGroup.PATCH("/studies/:id", adminH.UpdateStudy)
+		adminGroup.POST("/studies/import-archive", adminH.ImportArchive)
 
 		adminGroup.GET("/studies/:id/groups", adminH.ListGroups)
 		adminGroup.POST("/studies/:id/groups", adminH.CreateGroup)

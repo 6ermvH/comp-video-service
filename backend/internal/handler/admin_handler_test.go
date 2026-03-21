@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"archive/zip"
 	"bytes"
 	"context"
 	"errors"
@@ -105,6 +106,14 @@ type mockExportService struct {
 
 func (m *mockExportService) ExportCSV(ctx context.Context) ([]byte, error)  { return m.csvFn(ctx) }
 func (m *mockExportService) ExportJSON(ctx context.Context) ([]byte, error) { return m.jsonFn(ctx) }
+
+type mockImportService struct {
+	importFn func(context.Context, service.ImportArchiveRequest) (*service.ImportArchiveResult, error)
+}
+
+func (m *mockImportService) ImportArchive(ctx context.Context, req service.ImportArchiveRequest) (*service.ImportArchiveResult, error) {
+	return m.importFn(ctx, req)
+}
 
 func TestAdminHandlerListStudiesAndGroups(t *testing.T) {
 	gin.SetMode(gin.TestMode)
@@ -546,5 +555,154 @@ func TestAdminHandlerUploadAssetBranches(t *testing.T) {
 	r.ServeHTTP(w, req)
 	if w.Code != http.StatusCreated {
 		t.Fatalf("expected 201, got %d", w.Code)
+	}
+}
+
+// makeTestZIP builds a minimal ZIP archive with the given filenames and returns its bytes.
+func makeTestZIP(t *testing.T, filenames []string) []byte {
+	t.Helper()
+	var buf bytes.Buffer
+	w := zip.NewWriter(&buf)
+	for _, name := range filenames {
+		f, err := w.Create(name)
+		if err != nil {
+			t.Fatalf("zip create %q: %v", name, err)
+		}
+		_, _ = f.Write([]byte("fake-mp4-data"))
+	}
+	if err := w.Close(); err != nil {
+		t.Fatalf("zip close: %v", err)
+	}
+	return buf.Bytes()
+}
+
+func buildImportRequest(t *testing.T, fields map[string]string, zipData []byte) (*bytes.Buffer, string) {
+	t.Helper()
+	var body bytes.Buffer
+	w := multipart.NewWriter(&body)
+	for k, v := range fields {
+		_ = w.WriteField(k, v)
+	}
+	if zipData != nil {
+		part, err := w.CreateFormFile("file", "import.zip")
+		if err != nil {
+			t.Fatalf("create form file: %v", err)
+		}
+		_, _ = part.Write(zipData)
+	}
+	_ = w.Close()
+	return &body, w.FormDataContentType()
+}
+
+func TestAdminHandlerImportArchive(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	studyID := uuid.New()
+	importSvcOK := &mockImportService{
+		importFn: func(_ context.Context, req service.ImportArchiveRequest) (*service.ImportArchiveResult, error) {
+			return &service.ImportArchiveResult{
+				Study:          &model.Study{ID: studyID, Name: req.Name},
+				GroupsCreated:  1,
+				PairsCreated:   1,
+				VideosUploaded: 2,
+				Errors:         []string{},
+			}, nil
+		},
+	}
+
+	h := NewAdminHandlerWithImport(
+		&mockStudyService{},
+		&mockAssetService{},
+		&mockAnalyticsService{},
+		&mockQCService{},
+		&mockExportService{},
+		importSvcOK,
+	)
+
+	r := gin.New()
+	r.POST("/studies/import-archive", h.ImportArchive)
+
+	// Missing name field.
+	body, ct := buildImportRequest(t, map[string]string{"effect_type": "flooding"}, makeTestZIP(t, []string{"g_p_baseline.mp4"}))
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "/studies/import-archive", body)
+	req.Header.Set("Content-Type", ct)
+	r.ServeHTTP(w, req)
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("missing name: expected 400, got %d", w.Code)
+	}
+
+	// Missing effect_type field.
+	body, ct = buildImportRequest(t, map[string]string{"name": "Study"}, makeTestZIP(t, []string{"g_p_baseline.mp4"}))
+	w = httptest.NewRecorder()
+	req = httptest.NewRequest(http.MethodPost, "/studies/import-archive", body)
+	req.Header.Set("Content-Type", ct)
+	r.ServeHTTP(w, req)
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("missing effect_type: expected 400, got %d", w.Code)
+	}
+
+	// Missing file.
+	body, ct = buildImportRequest(t, map[string]string{"name": "Study", "effect_type": "flooding"}, nil)
+	w = httptest.NewRecorder()
+	req = httptest.NewRequest(http.MethodPost, "/studies/import-archive", body)
+	req.Header.Set("Content-Type", ct)
+	r.ServeHTTP(w, req)
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("missing file: expected 400, got %d", w.Code)
+	}
+
+	// Successful import.
+	zipData := makeTestZIP(t, []string{"g_p_baseline.mp4", "g_p_candidate.mp4"})
+	body, ct = buildImportRequest(t, map[string]string{"name": "My Study", "effect_type": "flooding"}, zipData)
+	w = httptest.NewRecorder()
+	req = httptest.NewRequest(http.MethodPost, "/studies/import-archive", body)
+	req.Header.Set("Content-Type", ct)
+	r.ServeHTTP(w, req)
+	if w.Code != http.StatusCreated {
+		t.Fatalf("success: expected 201, got %d: %s", w.Code, w.Body.String())
+	}
+
+	// Service error returns 500.
+	hErr := NewAdminHandlerWithImport(
+		&mockStudyService{},
+		&mockAssetService{},
+		&mockAnalyticsService{},
+		&mockQCService{},
+		&mockExportService{},
+		&mockImportService{importFn: func(context.Context, service.ImportArchiveRequest) (*service.ImportArchiveResult, error) {
+			return nil, errors.New("boom")
+		}},
+	)
+	r2 := gin.New()
+	r2.POST("/studies/import-archive", hErr.ImportArchive)
+
+	zipData = makeTestZIP(t, []string{"g_p_baseline.mp4", "g_p_candidate.mp4"})
+	body, ct = buildImportRequest(t, map[string]string{"name": "My Study", "effect_type": "flooding"}, zipData)
+	w = httptest.NewRecorder()
+	req = httptest.NewRequest(http.MethodPost, "/studies/import-archive", body)
+	req.Header.Set("Content-Type", ct)
+	r2.ServeHTTP(w, req)
+	if w.Code != http.StatusInternalServerError {
+		t.Fatalf("service error: expected 500, got %d", w.Code)
+	}
+}
+
+func TestAdminHandlerImportArchiveNoImportSvc(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	h := NewAdminHandler(
+		&mockStudyService{},
+		&mockAssetService{},
+		&mockAnalyticsService{},
+		&mockQCService{},
+		&mockExportService{},
+	)
+	r := gin.New()
+	r.POST("/studies/import-archive", h.ImportArchive)
+
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, httptest.NewRequest(http.MethodPost, "/studies/import-archive", nil))
+	if w.Code != http.StatusInternalServerError {
+		t.Fatalf("expected 500 when importSvc is nil, got %d", w.Code)
 	}
 }
