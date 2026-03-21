@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -17,9 +16,9 @@ import (
 
 // S3Client wraps the AWS SDK S3 client with service-specific helpers.
 type S3Client struct {
-	client    *s3.Client
-	bucket    string
-	publicURL string
+	client        *s3.Client
+	presignClient *s3.PresignClient
+	bucket        string
 }
 
 // NewS3Client creates and validates a new S3Client using the given config.
@@ -53,9 +52,9 @@ func NewS3Client(ctx context.Context, cfg *config.Config) (*S3Client, error) {
 	})
 
 	return &S3Client{
-		client:    client,
-		bucket:    cfg.S3Bucket,
-		publicURL: strings.TrimRight(cfg.S3PublicURL, "/"),
+		client:        client,
+		presignClient: s3.NewPresignClient(client),
+		bucket:        cfg.S3Bucket,
 	}, nil
 }
 
@@ -74,9 +73,16 @@ func (s *S3Client) Upload(ctx context.Context, key, contentType string, body io.
 	return nil
 }
 
-// PresignedURL returns a public URL for a bucket with anonymous read policy.
-func (s *S3Client) PresignedURL(_ context.Context, key string, _ time.Duration) (string, error) {
-	return fmt.Sprintf("%s/%s/%s", s.publicURL, s.bucket, key), nil
+// PresignedURL returns a presigned GET URL for the given key, valid for the specified duration.
+func (s *S3Client) PresignedURL(ctx context.Context, key string, duration time.Duration) (string, error) {
+	req, err := s.presignClient.PresignGetObject(ctx, &s3.GetObjectInput{
+		Bucket: aws.String(s.bucket),
+		Key:    aws.String(key),
+	}, s3.WithPresignExpires(duration))
+	if err != nil {
+		return "", fmt.Errorf("presign get object %q: %w", key, err)
+	}
+	return req.URL, nil
 }
 
 // Delete removes an object from S3.
