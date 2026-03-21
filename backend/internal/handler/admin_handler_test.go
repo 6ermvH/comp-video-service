@@ -23,6 +23,7 @@ type mockStudyService struct {
 	listStudiesFn                func(context.Context) ([]*model.Study, error)
 	createStudyFn                func(context.Context, *model.CreateStudyRequest) (*model.Study, error)
 	updateStudyFn                func(context.Context, uuid.UUID, *model.UpdateStudyRequest) (*model.Study, error)
+	deleteStudyFn                func(context.Context, uuid.UUID) error
 	listGroupsFn                 func(context.Context, uuid.UUID) ([]*model.Group, error)
 	createGroupFn                func(context.Context, uuid.UUID, *model.CreateGroupRequest) (*model.Group, error)
 	listSourceItemsFn            func(context.Context, *uuid.UUID, *uuid.UUID) ([]*model.SourceItemDetail, error)
@@ -41,6 +42,12 @@ func (m *mockStudyService) CreateStudy(ctx context.Context, r *model.CreateStudy
 }
 func (m *mockStudyService) UpdateStudy(ctx context.Context, id uuid.UUID, req *model.UpdateStudyRequest) (*model.Study, error) {
 	return m.updateStudyFn(ctx, id, req)
+}
+func (m *mockStudyService) DeleteStudy(ctx context.Context, id uuid.UUID) error {
+	if m.deleteStudyFn != nil {
+		return m.deleteStudyFn(ctx, id)
+	}
+	return nil
 }
 func (m *mockStudyService) ListGroups(ctx context.Context, id uuid.UUID) ([]*model.Group, error) {
 	return m.listGroupsFn(ctx, id)
@@ -935,6 +942,66 @@ func TestAdminHandlerGetAssetURL(t *testing.T) {
 		r.ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/assets/"+assetID.String()+"/url", nil))
 		if w.Code != http.StatusNotFound {
 			t.Fatalf("expected 404, got %d", w.Code)
+		}
+	})
+}
+
+func TestAdminHandler_DeleteStudy(t *testing.T) {
+	studyID := uuid.New()
+
+	t.Run("invalid id returns 400", func(t *testing.T) {
+		h := NewAdminHandler(&mockStudyService{}, &mockAssetService{}, &mockAnalyticsService{}, &mockQCService{}, &mockExportService{})
+		r := gin.New()
+		r.DELETE("/studies/:id", h.DeleteStudy)
+
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, httptest.NewRequest(http.MethodDelete, "/studies/not-a-uuid", nil))
+		if w.Code != http.StatusBadRequest {
+			t.Fatalf("expected 400, got %d", w.Code)
+		}
+	})
+
+	t.Run("study not found returns 404", func(t *testing.T) {
+		h := NewAdminHandler(
+			&mockStudyService{
+				deleteStudyFn: func(_ context.Context, _ uuid.UUID) error {
+					return service.ErrStudyNotFound
+				},
+			},
+			&mockAssetService{}, &mockAnalyticsService{}, &mockQCService{}, &mockExportService{},
+		)
+		r := gin.New()
+		r.DELETE("/studies/:id", h.DeleteStudy)
+
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, httptest.NewRequest(http.MethodDelete, "/studies/"+studyID.String(), nil))
+		if w.Code != http.StatusNotFound {
+			t.Fatalf("expected 404, got %d", w.Code)
+		}
+	})
+
+	t.Run("success returns 200 with message", func(t *testing.T) {
+		h := NewAdminHandler(
+			&mockStudyService{
+				deleteStudyFn: func(_ context.Context, id uuid.UUID) error {
+					if id != studyID {
+						t.Fatalf("unexpected id: %v", id)
+					}
+					return nil
+				},
+			},
+			&mockAssetService{}, &mockAnalyticsService{}, &mockQCService{}, &mockExportService{},
+		)
+		r := gin.New()
+		r.DELETE("/studies/:id", h.DeleteStudy)
+
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, httptest.NewRequest(http.MethodDelete, "/studies/"+studyID.String(), nil))
+		if w.Code != http.StatusOK {
+			t.Fatalf("expected 200, got %d: %s", w.Code, w.Body.String())
+		}
+		if !bytes.Contains(w.Body.Bytes(), []byte("study deleted")) {
+			t.Fatalf("expected 'study deleted' in body, got: %s", w.Body.String())
 		}
 	})
 }

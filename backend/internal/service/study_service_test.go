@@ -153,6 +153,31 @@ func TestStudyServiceUpdateSourceItemAttention(t *testing.T) {
 	}
 }
 
+func TestStudyServiceDeleteStudy(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	studyRepo := NewMockstudyRepository(ctrl)
+	svc := NewStudyService(studyRepo, NewMockgroupRepository(ctrl), NewMocksourceItemRepository(ctrl), nil)
+
+	t.Run("success", func(t *testing.T) {
+		id := uuid.New()
+		studyRepo.EXPECT().Delete(gomock.Any(), id).Return(true, nil)
+		if err := svc.DeleteStudy(context.Background(), id); err != nil {
+			t.Fatalf("DeleteStudy: %v", err)
+		}
+	})
+
+	t.Run("not found", func(t *testing.T) {
+		id := uuid.New()
+		studyRepo.EXPECT().Delete(gomock.Any(), id).Return(false, nil)
+		err := svc.DeleteStudy(context.Background(), id)
+		if err == nil || err != ErrStudyNotFound {
+			t.Fatalf("expected ErrStudyNotFound, got %v", err)
+		}
+	})
+}
+
 func TestStudyServiceDeletePairBlocked(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()

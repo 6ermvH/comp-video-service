@@ -30,6 +30,7 @@ func (m *mockStudyRepo) UpdateStatus(ctx context.Context, id uuid.UUID, status s
 func (m *mockStudyRepo) Update(ctx context.Context, id uuid.UUID, req *model.UpdateStudyRequest) (*model.Study, error) {
 	return nil, nil
 }
+func (m *mockStudyRepo) Delete(ctx context.Context, id uuid.UUID) (bool, error) { return false, nil }
 
 type mockGroupRepo struct {
 	createFn func(ctx context.Context, studyID uuid.UUID, req *model.CreateGroupRequest) (*model.Group, error)

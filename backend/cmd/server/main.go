@@ -127,6 +127,7 @@ func main() {
 		adminGroup.GET("/studies", adminH.ListStudies)
 		adminGroup.POST("/studies", adminH.CreateStudy)
 		adminGroup.PATCH("/studies/:id", adminH.UpdateStudy)
+		adminGroup.DELETE("/studies/:id", adminH.DeleteStudy)
 		adminGroup.POST("/studies/import-archive", adminH.ImportArchive)
 
 		adminGroup.GET("/studies/:id/groups", adminH.ListGroups)

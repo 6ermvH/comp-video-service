@@ -87,6 +87,21 @@ func (mr *MockstudyRepositoryMockRecorder) Update(ctx, id, req any) *gomock.Call
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockstudyRepository)(nil).Update), ctx, id, req)
 }
 
+// Delete mocks base method.
+func (m *MockstudyRepository) Delete(ctx context.Context, id uuid.UUID) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Delete", ctx, id)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Delete indicates an expected call of Delete.
+func (mr *MockstudyRepositoryMockRecorder) Delete(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockstudyRepository)(nil).Delete), ctx, id)
+}
+
 // UpdateStatus mocks base method.
 func (m *MockstudyRepository) UpdateStatus(ctx context.Context, id uuid.UUID, status string) (*model.Study, error) {
 	m.ctrl.T.Helper()

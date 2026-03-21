@@ -24,6 +24,7 @@ type studyRepository interface {
 	Create(ctx context.Context, req *model.CreateStudyRequest) (*model.Study, error)
 	UpdateStatus(ctx context.Context, id uuid.UUID, status string) (*model.Study, error)
 	Update(ctx context.Context, id uuid.UUID, req *model.UpdateStudyRequest) (*model.Study, error)
+	Delete(ctx context.Context, id uuid.UUID) (bool, error)
 }
 
 type groupRepository interface {
@@ -143,6 +144,22 @@ func (s *StudyService) UpdateSourceItemAttention(ctx context.Context, id uuid.UU
 		return nil, fmt.Errorf("update attention check: %w", err)
 	}
 	return s.sourceItemRepo.GetByIDWithDetails(ctx, id)
+}
+
+// ErrStudyNotFound is returned when a study with the given ID does not exist.
+var ErrStudyNotFound = errors.New("study not found")
+
+// DeleteStudy permanently removes a study and all associated data.
+// Video assets are released back to the free library (not deleted from S3).
+func (s *StudyService) DeleteStudy(ctx context.Context, id uuid.UUID) error {
+	deleted, err := s.studyRepo.Delete(ctx, id)
+	if err != nil {
+		return fmt.Errorf("delete study: %w", err)
+	}
+	if !deleted {
+		return ErrStudyNotFound
+	}
+	return nil
 }
 
 func (s *StudyService) DeletePair(ctx context.Context, id uuid.UUID) error {

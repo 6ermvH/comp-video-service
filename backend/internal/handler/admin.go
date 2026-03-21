@@ -21,6 +21,7 @@ type studyService interface {
 	ListStudies(ctx context.Context) ([]*model.Study, error)
 	CreateStudy(ctx context.Context, req *model.CreateStudyRequest) (*model.Study, error)
 	UpdateStudy(ctx context.Context, id uuid.UUID, req *model.UpdateStudyRequest) (*model.Study, error)
+	DeleteStudy(ctx context.Context, id uuid.UUID) error
 	ListGroups(ctx context.Context, studyID uuid.UUID) ([]*model.Group, error)
 	CreateGroup(ctx context.Context, studyID uuid.UUID, req *model.CreateGroupRequest) (*model.Group, error)
 	ListSourceItems(ctx context.Context, studyID *uuid.UUID, groupID *uuid.UUID) ([]*model.SourceItemDetail, error)
@@ -178,6 +179,36 @@ func (h *AdminHandler) UpdateStudy(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, study)
+}
+
+// DeleteStudy godoc
+// @Summary      Delete a study and all its data
+// @Description  Permanently removes a study with all participants, responses, pairs, and groups. Video assets are returned to the free library (not deleted from S3).
+// @Tags         admin
+// @Produce      json
+// @Security     BearerAuth
+// @Security     CSRFToken
+// @Param        id   path      string  true  "Study ID"
+// @Success      200  {object}  map[string]string
+// @Failure      400  {object}  map[string]string
+// @Failure      404  {object}  map[string]string
+// @Failure      500  {object}  map[string]string
+// @Router       /admin/studies/{id} [delete]
+func (h *AdminHandler) DeleteStudy(c *gin.Context) {
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid study id"})
+		return
+	}
+	if err := h.studySvc.DeleteStudy(c.Request.Context(), id); err != nil {
+		if errors.Is(err, service.ErrStudyNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "study not found"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "study deleted"})
 }
 
 // CreateGroup godoc

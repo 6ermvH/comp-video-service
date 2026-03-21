@@ -125,6 +125,87 @@ func (r *StudyRepository) Update(ctx context.Context, id uuid.UUID, req *model.U
 	return scanStudy(row)
 }
 
+// Delete removes a study and all related data in a single transaction.
+// Video assets are unlinked (source_item_id = NULL) but not deleted — they return to the free library.
+// Returns false if the study was not found.
+func (r *StudyRepository) Delete(ctx context.Context, id uuid.UUID) (bool, error) {
+	tx, err := r.db.Begin(ctx)
+	if err != nil {
+		return false, fmt.Errorf("begin tx: %w", err)
+	}
+	defer func() { _ = tx.Rollback(ctx) }()
+
+	// 1. interaction_logs — via participants (participant_id IN (...))
+	_, err = tx.Exec(ctx, `
+		DELETE FROM interaction_logs
+		WHERE participant_id IN (
+			SELECT id FROM participants WHERE study_id = $1
+		)`, id)
+	if err != nil {
+		return false, fmt.Errorf("delete interaction_logs: %w", err)
+	}
+
+	// 2. responses — via participants
+	_, err = tx.Exec(ctx, `
+		DELETE FROM responses
+		WHERE participant_id IN (
+			SELECT id FROM participants WHERE study_id = $1
+		)`, id)
+	if err != nil {
+		return false, fmt.Errorf("delete responses: %w", err)
+	}
+
+	// 3. pair_presentations — via participants
+	_, err = tx.Exec(ctx, `
+		DELETE FROM pair_presentations
+		WHERE participant_id IN (
+			SELECT id FROM participants WHERE study_id = $1
+		)`, id)
+	if err != nil {
+		return false, fmt.Errorf("delete pair_presentations: %w", err)
+	}
+
+	// 4. participants
+	_, err = tx.Exec(ctx, `DELETE FROM participants WHERE study_id = $1`, id)
+	if err != nil {
+		return false, fmt.Errorf("delete participants: %w", err)
+	}
+
+	// 5. Unlink video_assets — return them to free library
+	_, err = tx.Exec(ctx, `
+		UPDATE video_assets SET source_item_id = NULL, method_type = NULL
+		WHERE source_item_id IN (
+			SELECT id FROM source_items WHERE study_id = $1
+		)`, id)
+	if err != nil {
+		return false, fmt.Errorf("unlink video_assets: %w", err)
+	}
+
+	// 6. source_items
+	_, err = tx.Exec(ctx, `DELETE FROM source_items WHERE study_id = $1`, id)
+	if err != nil {
+		return false, fmt.Errorf("delete source_items: %w", err)
+	}
+
+	// 7. groups
+	_, err = tx.Exec(ctx, `DELETE FROM groups WHERE study_id = $1`, id)
+	if err != nil {
+		return false, fmt.Errorf("delete groups: %w", err)
+	}
+
+	// 8. study itself
+	tag, err := tx.Exec(ctx, `DELETE FROM studies WHERE id = $1`, id)
+	if err != nil {
+		return false, fmt.Errorf("delete study: %w", err)
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return false, fmt.Errorf("commit: %w", err)
+	}
+
+	return tag.RowsAffected() > 0, nil
+}
+
 func scanStudy(row scanner) (*model.Study, error) {
 	var s model.Study
 	err := row.Scan(
