@@ -206,9 +206,10 @@ const SyncVideoPlayer = forwardRef(function SyncVideoPlayer(
             className="btn btn-ghost"
             onClick={togglePlayPause}
             disabled={!bothReady}
-            style={{ width: isMobile ? '100%' : '138px', height: '34px', padding: '6px 10px', justifyContent: 'center', fontSize: '13px', lineHeight: 1 }}
+            style={{ width: isMobile ? '100%' : '138px', height: '34px', padding: '6px 10px', justifyContent: 'center', fontSize: '13px', lineHeight: 1, display: 'inline-flex', alignItems: 'center', gap: '6px' }}
           >
-            {playing ? '⏸ Пауза' : '▶ Воспроизвести'}
+            {playing ? <PauseIcon /> : <PlayIcon />}
+            <span>{playing ? 'Пауза' : 'Воспроизвести'}</span>
           </button>
           {!isMobile && (
             <button
@@ -216,9 +217,10 @@ const SyncVideoPlayer = forwardRef(function SyncVideoPlayer(
               onClick={replay}
               disabled={!bothReady}
               title="Повторить (R)"
-              style={{ width: '138px', minHeight: '34px', padding: '6px 10px', justifyContent: 'center', fontSize: '13px' }}
+              style={{ width: '138px', minHeight: '34px', padding: '6px 10px', justifyContent: 'center', fontSize: '13px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
             >
-              ↺ Повторить
+              <ReplayIcon />
+              <span>Повторить</span>
             </button>
           )}
         </div>
@@ -231,5 +233,56 @@ const SyncVideoPlayer = forwardRef(function SyncVideoPlayer(
     </div>
   )
 })
+
+function PlayIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      width="12"
+      height="12"
+      viewBox="0 0 12 12"
+      fill="currentColor"
+      style={{ flexShrink: 0 }}
+    >
+      <path d="M3 2.1a.55.55 0 0 1 .83-.47l5.6 3.4a.55.55 0 0 1 0 .94l-5.6 3.4A.55.55 0 0 1 3 8.9z" />
+    </svg>
+  )
+}
+
+function PauseIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      width="12"
+      height="12"
+      viewBox="0 0 12 12"
+      fill="currentColor"
+      style={{ flexShrink: 0 }}
+    >
+      <rect x="2" y="1.5" width="3" height="9" rx="0.8" />
+      <rect x="7" y="1.5" width="3" height="9" rx="0.8" />
+    </svg>
+  )
+}
+
+function ReplayIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      width="13"
+      height="13"
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      style={{ flexShrink: 0 }}
+    >
+      <path d="M13 3.5v3.75H9.25" />
+      <path d="M13 7.25A5.5 5.5 0 1 0 14 10.5" />
+    </svg>
+  )
+}
 
 export default SyncVideoPlayer
