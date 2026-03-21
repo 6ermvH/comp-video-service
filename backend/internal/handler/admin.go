@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"mime/multipart"
 	"net/http"
 	"strconv"
@@ -27,6 +28,10 @@ type studyService interface {
 	ListFreeAssets(ctx context.Context) ([]*model.Video, error)
 	CreatePair(ctx context.Context, studyID uuid.UUID, req *model.CreatePairRequest) (*model.SourceItem, error)
 	DeletePair(ctx context.Context, id uuid.UUID) error
+}
+
+type importService interface {
+	ImportArchive(ctx context.Context, req service.ImportArchiveRequest) (*service.ImportArchiveResult, error)
 }
 
 type assetService interface {
@@ -56,6 +61,7 @@ type AdminHandler struct {
 	analyticsSvc analyticsService
 	qcSvc        qcService
 	exportSvc    exportService
+	importSvc    importService
 }
 
 // NewAdminHandler creates a new AdminHandler.
@@ -72,6 +78,25 @@ func NewAdminHandler(
 		analyticsSvc: analyticsSvc,
 		qcSvc:        qcSvc,
 		exportSvc:    exportSvc,
+	}
+}
+
+// NewAdminHandlerWithImport creates a new AdminHandler with import support.
+func NewAdminHandlerWithImport(
+	studySvc studyService,
+	assetSvc assetService,
+	analyticsSvc analyticsService,
+	qcSvc qcService,
+	exportSvc exportService,
+	importSvc importService,
+) *AdminHandler {
+	return &AdminHandler{
+		studySvc:     studySvc,
+		assetSvc:     assetSvc,
+		analyticsSvc: analyticsSvc,
+		qcSvc:        qcSvc,
+		exportSvc:    exportSvc,
+		importSvc:    importSvc,
 	}
 }
 
@@ -570,6 +595,93 @@ func (h *AdminHandler) ExportJSON(c *gin.Context) {
 		return
 	}
 	c.Data(http.StatusOK, "application/json", payload)
+}
+
+// ImportArchive godoc
+// @Summary      Import a study from a ZIP archive of MP4 files
+// @Description  Accepts a ZIP archive containing MP4 files named <group>_<name>_<baseline|candidate>.mp4.
+// @Tags         admin
+// @Accept       mpfd
+// @Produce      json
+// @Security     BearerAuth
+// @Security     CSRFToken
+// @Param        file                    formData  file    true   "ZIP archive"
+// @Param        name                    formData  string  true   "Study name"
+// @Param        effect_type             formData  string  true   "Effect type (flooding, explosion, mixed)"
+// @Param        max_tasks_per_participant formData int    false  "Max tasks per participant"
+// @Param        tie_option_enabled      formData  bool    false  "Enable tie option"
+// @Param        reasons_enabled         formData  bool    false  "Enable reasons"
+// @Param        confidence_enabled      formData  bool    false  "Enable confidence"
+// @Success      201  {object}  service.ImportArchiveResult
+// @Failure      400  {object}  map[string]string
+// @Failure      500  {object}  map[string]string
+// @Router       /admin/studies/import-archive [post]
+func (h *AdminHandler) ImportArchive(c *gin.Context) {
+	if h.importSvc == nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "import service not configured"})
+		return
+	}
+
+	name := strings.TrimSpace(c.PostForm("name"))
+	if name == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "name is required"})
+		return
+	}
+
+	effectType := strings.TrimSpace(c.PostForm("effect_type"))
+	if effectType == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "effect_type is required"})
+		return
+	}
+
+	file, _, err := c.Request.FormFile("file")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "file is required"})
+		return
+	}
+	defer func() { _ = file.Close() }()
+
+	zipData, err := io.ReadAll(file)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "failed to read archive"})
+		return
+	}
+
+	req := service.ImportArchiveRequest{
+		Name:       name,
+		EffectType: effectType,
+		ZIPData:    zipData,
+	}
+
+	if v := strings.TrimSpace(c.PostForm("max_tasks_per_participant")); v != "" {
+		n, err := strconv.Atoi(v)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "max_tasks_per_participant must be an integer"})
+			return
+		}
+		req.MaxTasksPerParticipant = n
+	}
+
+	if v := strings.TrimSpace(c.PostForm("tie_option_enabled")); v != "" {
+		b := v == "true" || v == "1"
+		req.TieOptionEnabled = &b
+	}
+	if v := strings.TrimSpace(c.PostForm("reasons_enabled")); v != "" {
+		b := v == "true" || v == "1"
+		req.ReasonsEnabled = &b
+	}
+	if v := strings.TrimSpace(c.PostForm("confidence_enabled")); v != "" {
+		b := v == "true" || v == "1"
+		req.ConfidenceEnabled = &b
+	}
+
+	result, err := h.importSvc.ImportArchive(c.Request.Context(), req)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusCreated, result)
 }
 
 func validateMP4(header *multipart.FileHeader) error {
