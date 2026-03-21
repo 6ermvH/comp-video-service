@@ -132,6 +132,23 @@ func (r *ResponseRepository) AttentionCheckStats(ctx context.Context, participan
 	return total, failed, nil
 }
 
+// CountAttentionCheckFailures returns the total number of responses where the
+// participant chose the candidate side in an attention-check pair (baseline is
+// always the correct answer in such pairs, so candidate selection = failure).
+func (r *ResponseRepository) CountAttentionCheckFailures(ctx context.Context) (int64, error) {
+	var count int64
+	err := r.db.QueryRow(ctx, `
+		SELECT COUNT(*)
+		FROM responses r
+		JOIN pair_presentations pp ON pp.id = r.pair_presentation_id
+		WHERE pp.is_attention_check = true
+		  AND (
+		    (pp.left_method_type = 'candidate' AND r.choice = 'left')
+		    OR (pp.right_method_type = 'candidate' AND r.choice = 'right')
+		  )`).Scan(&count)
+	return count, err
+}
+
 func scanResponse(row scanner) (*model.Response, error) {
 	var resp model.Response
 	err := row.Scan(

@@ -127,20 +127,6 @@ func (mr *MockassetStorageMockRecorder) Delete(ctx, key any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockassetStorage)(nil).Delete), ctx, key)
 }
 
-// Upload mocks base method.
-func (m *MockassetStorage) Upload(ctx context.Context, key, contentType string, body io.Reader, size int64) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Upload", ctx, key, contentType, body, size)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// Upload indicates an expected call of Upload.
-func (mr *MockassetStorageMockRecorder) Upload(ctx, key, contentType, body, size any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Upload", reflect.TypeOf((*MockassetStorage)(nil).Upload), ctx, key, contentType, body, size)
-}
-
 // PresignedURL mocks base method.
 func (m *MockassetStorage) PresignedURL(ctx context.Context, key string, ttl time.Duration) (string, error) {
 	m.ctrl.T.Helper()
@@ -154,4 +140,18 @@ func (m *MockassetStorage) PresignedURL(ctx context.Context, key string, ttl tim
 func (mr *MockassetStorageMockRecorder) PresignedURL(ctx, key, ttl any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PresignedURL", reflect.TypeOf((*MockassetStorage)(nil).PresignedURL), ctx, key, ttl)
+}
+
+// Upload mocks base method.
+func (m *MockassetStorage) Upload(ctx context.Context, key, contentType string, body io.Reader, size int64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Upload", ctx, key, contentType, body, size)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Upload indicates an expected call of Upload.
+func (mr *MockassetStorageMockRecorder) Upload(ctx, key, contentType, body, size any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Upload", reflect.TypeOf((*MockassetStorage)(nil).Upload), ctx, key, contentType, body, size)
 }

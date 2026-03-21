@@ -23,7 +23,7 @@ func TestQCServiceBuildReportWithGomock(t *testing.T) {
 	resp.EXPECT().CountTotal(gomock.Any()).Return(int64(100), nil)
 	resp.EXPECT().CountFastResponses(gomock.Any(), 1500).Return(int64(15), nil)
 	resp.EXPECT().StraightLiningParticipants(gomock.Any()).Return(int64(2), nil)
-	part.EXPECT().CountByQualityFlag(gomock.Any(), "flagged").Return(int64(3), nil)
+	resp.EXPECT().CountAttentionCheckFailures(gomock.Any()).Return(int64(3), nil)
 	part.EXPECT().CountByQualityFlag(gomock.Any(), "suspect").Return(int64(1), nil)
 	part.EXPECT().FlaggedParticipants(gomock.Any()).Return([]*model.FlaggedParticipant{fp}, nil)
 

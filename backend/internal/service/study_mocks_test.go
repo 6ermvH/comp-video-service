@@ -210,6 +210,21 @@ func (mr *MocksourceItemRepositoryMockRecorder) Delete(ctx, id any) *gomock.Call
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MocksourceItemRepository)(nil).Delete), ctx, id)
 }
 
+// GetByIDWithDetails mocks base method.
+func (m *MocksourceItemRepository) GetByIDWithDetails(ctx context.Context, id uuid.UUID) (*model.SourceItemDetail, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetByIDWithDetails", ctx, id)
+	ret0, _ := ret[0].(*model.SourceItemDetail)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetByIDWithDetails indicates an expected call of GetByIDWithDetails.
+func (mr *MocksourceItemRepositoryMockRecorder) GetByIDWithDetails(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByIDWithDetails", reflect.TypeOf((*MocksourceItemRepository)(nil).GetByIDWithDetails), ctx, id)
+}
+
 // ListWithDetails mocks base method.
 func (m *MocksourceItemRepository) ListWithDetails(ctx context.Context, studyID, groupID *uuid.UUID) ([]*model.SourceItemDetail, error) {
 	m.ctrl.T.Helper()
@@ -252,21 +267,6 @@ func (m *MocksourceItemRepository) UpdateAttentionCheck(ctx context.Context, id 
 func (mr *MocksourceItemRepositoryMockRecorder) UpdateAttentionCheck(ctx, id, isAttentionCheck any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateAttentionCheck", reflect.TypeOf((*MocksourceItemRepository)(nil).UpdateAttentionCheck), ctx, id, isAttentionCheck)
-}
-
-// GetByIDWithDetails mocks base method.
-func (m *MocksourceItemRepository) GetByIDWithDetails(ctx context.Context, id uuid.UUID) (*model.SourceItemDetail, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetByIDWithDetails", ctx, id)
-	ret0, _ := ret[0].(*model.SourceItemDetail)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetByIDWithDetails indicates an expected call of GetByIDWithDetails.
-func (mr *MocksourceItemRepositoryMockRecorder) GetByIDWithDetails(ctx, id any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByIDWithDetails", reflect.TypeOf((*MocksourceItemRepository)(nil).GetByIDWithDetails), ctx, id)
 }
 
 // MockstudyVideoRepository is a mock of studyVideoRepository interface.

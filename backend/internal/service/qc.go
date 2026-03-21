@@ -35,6 +35,7 @@ type qcResponseRepository interface {
 	CountByParticipant(ctx context.Context, participantID uuid.UUID) (int64, error)
 	CountFastByParticipant(ctx context.Context, participantID uuid.UUID, thresholdMS int) (int64, error)
 	AttentionCheckStats(ctx context.Context, participantID uuid.UUID) (int64, int64, error)
+	CountAttentionCheckFailures(ctx context.Context) (int64, error)
 }
 
 type qcParticipantRepository interface {
@@ -66,7 +67,7 @@ func (s *QCService) BuildReport(ctx context.Context) (*QCReport, error) {
 		return nil, err
 	}
 
-	attentionFailed, err := s.participantRepo.CountByQualityFlag(ctx, "flagged")
+	attentionFailed, err := s.responseRepo.CountAttentionCheckFailures(ctx)
 	if err != nil {
 		return nil, err
 	}

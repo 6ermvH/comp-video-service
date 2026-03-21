@@ -10,13 +10,12 @@
 package service
 
 import (
+	model "comp-video-service/backend/internal/model"
 	context "context"
 	reflect "reflect"
 
 	uuid "github.com/google/uuid"
 	gomock "go.uber.org/mock/gomock"
-
-	model "comp-video-service/backend/internal/model"
 )
 
 // MockqcResponseRepository is a mock of qcResponseRepository interface.
@@ -57,6 +56,21 @@ func (m *MockqcResponseRepository) AttentionCheckStats(ctx context.Context, part
 func (mr *MockqcResponseRepositoryMockRecorder) AttentionCheckStats(ctx, participantID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AttentionCheckStats", reflect.TypeOf((*MockqcResponseRepository)(nil).AttentionCheckStats), ctx, participantID)
+}
+
+// CountAttentionCheckFailures mocks base method.
+func (m *MockqcResponseRepository) CountAttentionCheckFailures(ctx context.Context) (int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CountAttentionCheckFailures", ctx)
+	ret0, _ := ret[0].(int64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CountAttentionCheckFailures indicates an expected call of CountAttentionCheckFailures.
+func (mr *MockqcResponseRepositoryMockRecorder) CountAttentionCheckFailures(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountAttentionCheckFailures", reflect.TypeOf((*MockqcResponseRepository)(nil).CountAttentionCheckFailures), ctx)
 }
 
 // CountByParticipant mocks base method.
@@ -158,20 +172,6 @@ func (m *MockqcParticipantRepository) EXPECT() *MockqcParticipantRepositoryMockR
 	return m.recorder
 }
 
-// UpdateQualityFlag mocks base method.
-func (m *MockqcParticipantRepository) UpdateQualityFlag(ctx context.Context, participantID uuid.UUID, qualityFlag string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateQualityFlag", ctx, participantID, qualityFlag)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// UpdateQualityFlag indicates an expected call of UpdateQualityFlag.
-func (mr *MockqcParticipantRepositoryMockRecorder) UpdateQualityFlag(ctx, participantID, qualityFlag any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateQualityFlag", reflect.TypeOf((*MockqcParticipantRepository)(nil).UpdateQualityFlag), ctx, participantID, qualityFlag)
-}
-
 // CountByQualityFlag mocks base method.
 func (m *MockqcParticipantRepository) CountByQualityFlag(ctx context.Context, flag string) (int64, error) {
 	m.ctrl.T.Helper()
@@ -200,4 +200,18 @@ func (m *MockqcParticipantRepository) FlaggedParticipants(ctx context.Context) (
 func (mr *MockqcParticipantRepositoryMockRecorder) FlaggedParticipants(ctx any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FlaggedParticipants", reflect.TypeOf((*MockqcParticipantRepository)(nil).FlaggedParticipants), ctx)
+}
+
+// UpdateQualityFlag mocks base method.
+func (m *MockqcParticipantRepository) UpdateQualityFlag(ctx context.Context, participantID uuid.UUID, qualityFlag string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateQualityFlag", ctx, participantID, qualityFlag)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateQualityFlag indicates an expected call of UpdateQualityFlag.
+func (mr *MockqcParticipantRepositoryMockRecorder) UpdateQualityFlag(ctx, participantID, qualityFlag any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateQualityFlag", reflect.TypeOf((*MockqcParticipantRepository)(nil).UpdateQualityFlag), ctx, participantID, qualityFlag)
 }
