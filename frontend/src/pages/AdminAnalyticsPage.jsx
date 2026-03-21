@@ -15,6 +15,7 @@ export default function AdminAnalyticsPage() {
   const [selectedStudyId, setSelectedStudyId] = useState(null)
   const [pairStats, setPairStats] = useState([])
   const [loadingPairs, setLoadingPairs] = useState(false)
+  const [exportingStudyCsv, setExportingStudyCsv] = useState(false)
 
   const load = async () => {
     setLoading(true)
@@ -172,9 +173,30 @@ export default function AdminAnalyticsPage() {
 
           {/* Per-pair breakdown */}
           <div className="card">
-            <h2 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '16px' }}>
-              Статистика по парам
-            </h2>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <h2 style={{ fontSize: '16px', fontWeight: 600 }}>
+                Статистика по парам
+              </h2>
+              {selectedStudyId && (
+                <button
+                  className="btn btn-ghost"
+                  disabled={exportingStudyCsv}
+                  onClick={async () => {
+                    setExportingStudyCsv(true)
+                    try {
+                      const blob = await api.exportStudyCSV(selectedStudyId)
+                      downloadBlob(blob, `pairs_export_${selectedStudyId}.csv`)
+                    } catch (err) {
+                      setError(err.message)
+                    } finally {
+                      setExportingStudyCsv(false)
+                    }
+                  }}
+                >
+                  {exportingStudyCsv ? '…' : '⬇ CSV по парам'}
+                </button>
+              )}
+            </div>
             <select
               value={selectedStudyId ?? ''}
               onChange={(e) => setSelectedStudyId(e.target.value || null)}
