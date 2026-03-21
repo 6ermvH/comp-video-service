@@ -11,23 +11,24 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
-// Shared scan callback for ExportCSV / ExportStudyCSV (15 columns, new format).
+// Shared scan callback for ExportCSV / ExportStudyCSV (16 columns, new format).
 func scanExportRow(dest ...any) error {
 	*(dest[0].(*string)) = "r1"
 	*(dest[1].(*string)) = "p1"
 	*(dest[2].(*string)) = "Study A"
-	*(dest[3].(*string)) = "Group 1"
-	*(dest[4].(*string)) = "P001"
-	*(dest[5].(*string)) = "suspect"
-	*(dest[6].(*string)) = "candidate"
-	*(dest[7].(*string)) = "baseline"
-	*(dest[8].(*string)) = "left"
-	*(dest[9].(*string)) = "motion|artifacts"
-	*(dest[10].(*string)) = "4"
-	*(dest[11].(*string)) = "2000"
-	*(dest[12].(*int)) = 2
-	*(dest[13].(*bool)) = false
-	*(dest[14].(*time.Time)) = time.Date(2026, 3, 21, 0, 0, 0, 0, time.UTC)
+	*(dest[3].(*string)) = "flooding"
+	*(dest[4].(*string)) = "Group 1"
+	*(dest[5].(*string)) = "P001"
+	*(dest[6].(*string)) = "suspect"
+	*(dest[7].(*string)) = "candidate"
+	*(dest[8].(*string)) = "baseline"
+	*(dest[9].(*string)) = "left"
+	*(dest[10].(*string)) = "motion|artifacts"
+	*(dest[11].(*string)) = "4"
+	*(dest[12].(*string)) = "2000"
+	*(dest[13].(*int)) = 2
+	*(dest[14].(*bool)) = false
+	*(dest[15].(*time.Time)) = time.Date(2026, 3, 21, 0, 0, 0, 0, time.UTC)
 	return nil
 }
 
@@ -35,6 +36,7 @@ var scan15Args = []any{
 	gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
 	gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
 	gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
+	gomock.Any(),
 }
 
 func TestExportServiceExportCSVSuccess(t *testing.T) {
@@ -141,7 +143,7 @@ func TestExportStudyCSVSuccess(t *testing.T) {
 		t.Fatalf("ExportStudyCSV error: %v", err)
 	}
 	csvText := string(csvBytes)
-	if !strings.Contains(csvText, "response_id,participant_id,study_name,group_name,pair_code") {
+	if !strings.Contains(csvText, "response_id,participant_id,study_name,effect_type,group_name,pair_code") {
 		t.Fatalf("unexpected csv header: %s", csvText)
 	}
 	// is_suspect: quality_flag=suspect → true
@@ -175,18 +177,19 @@ func TestExportStudyCSVCandidatePositionRight(t *testing.T) {
 			*(dest[0].(*string)) = "resp-2"
 			*(dest[1].(*string)) = "part-2"
 			*(dest[2].(*string)) = "Study B"
-			*(dest[3].(*string)) = "Group 2"
-			*(dest[4].(*string)) = "P002"
-			*(dest[5].(*string)) = "ok"
-			*(dest[6].(*string)) = "baseline"
-			*(dest[7].(*string)) = "candidate"
-			*(dest[8].(*string)) = "right" // choice matches candidate_position=right
-			*(dest[9].(*string)) = "overall"
-			*(dest[10].(*string)) = ""
+			*(dest[3].(*string)) = "flooding"
+			*(dest[4].(*string)) = "Group 2"
+			*(dest[5].(*string)) = "P002"
+			*(dest[6].(*string)) = "ok"
+			*(dest[7].(*string)) = "baseline"
+			*(dest[8].(*string)) = "candidate"
+			*(dest[9].(*string)) = "right" // choice matches candidate_position=right
+			*(dest[10].(*string)) = "overall"
 			*(dest[11].(*string)) = ""
-			*(dest[12].(*int)) = 0
-			*(dest[13].(*bool)) = true
-			*(dest[14].(*time.Time)) = time.Date(2026, 3, 21, 0, 0, 0, 0, time.UTC)
+			*(dest[12].(*string)) = ""
+			*(dest[13].(*int)) = 0
+			*(dest[14].(*bool)) = true
+			*(dest[15].(*time.Time)) = time.Date(2026, 3, 21, 0, 0, 0, 0, time.UTC)
 			return nil
 		}),
 		rows.EXPECT().Next().Return(false),

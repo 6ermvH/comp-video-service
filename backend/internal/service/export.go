@@ -58,7 +58,7 @@ func NewExportService(db *pgxpool.Pool) *ExportService {
 }
 
 var exportCSVHeaderSlice = []string{
-	"response_id", "participant_id", "study_name", "group_name", "pair_code",
+	"response_id", "participant_id", "study_name", "effect_type", "group_name", "pair_code",
 	"is_suspect", "candidate_position", "candidate_chosen",
 	"reason_motion", "reason_artifacts", "reason_overall", "reason_integration",
 	"confidence", "response_time_ms", "replay_count",
@@ -67,7 +67,7 @@ var exportCSVHeaderSlice = []string{
 
 // buildExportCSVRow converts scanned fields into a CSV record.
 func buildExportCSVRow(
-	responseID, participantID, studyName, groupName, pairCode,
+	responseID, participantID, studyName, effectType, groupName, pairCode,
 	qualityFlag, leftMethodType, rightMethodType, choice,
 	reasonCodes, confidence, responseTimeMS string,
 	replayCount int,
@@ -103,6 +103,7 @@ func buildExportCSVRow(
 		responseID,
 		participantID,
 		studyName,
+		effectType,
 		groupName,
 		pairCode,
 		strconv.FormatBool(isSuspect),
@@ -128,6 +129,7 @@ func (s *ExportService) ExportCSV(ctx context.Context) ([]byte, error) {
 			r.id,
 			r.participant_id,
 			st.name,
+			st.effect_type,
 			g.name,
 			si.pair_code,
 			p.quality_flag,
@@ -163,6 +165,7 @@ func (s *ExportService) ExportStudyCSV(ctx context.Context, studyID uuid.UUID) (
 			r.id,
 			r.participant_id,
 			st.name,
+			st.effect_type,
 			g.name,
 			si.pair_code,
 			p.quality_flag,
@@ -205,6 +208,7 @@ func writeExportCSV(rows exportRows, scanErrPrefix string) ([]byte, error) {
 			responseID       string
 			participantID    string
 			studyName        string
+			effectType       string
 			groupName        string
 			pairCode         string
 			qualityFlag      string
@@ -219,7 +223,7 @@ func writeExportCSV(rows exportRows, scanErrPrefix string) ([]byte, error) {
 			createdAt        time.Time
 		)
 		if err := rows.Scan(
-			&responseID, &participantID, &studyName, &groupName, &pairCode,
+			&responseID, &participantID, &studyName, &effectType, &groupName, &pairCode,
 			&qualityFlag, &leftMethodType, &rightMethodType, &choice,
 			&reasonCodes, &confidence, &responseTimeMS, &replayCount,
 			&isAttentionCheck, &createdAt,
@@ -228,7 +232,7 @@ func writeExportCSV(rows exportRows, scanErrPrefix string) ([]byte, error) {
 		}
 
 		rec := buildExportCSVRow(
-			responseID, participantID, studyName, groupName, pairCode,
+			responseID, participantID, studyName, effectType, groupName, pairCode,
 			qualityFlag, leftMethodType, rightMethodType, choice,
 			reasonCodes, confidence, responseTimeMS,
 			replayCount, isAttentionCheck, createdAt,

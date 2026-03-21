@@ -122,11 +122,11 @@ func TestSaveResponseAndExportCSVHeader(t *testing.T) {
 	}
 
 	header := records[0]
-	if len(header) != 17 {
-		t.Fatalf("expected 17 columns, got %d", len(header))
+	if len(header) != 18 {
+		t.Fatalf("expected 18 columns, got %d", len(header))
 	}
-	if header[0] != "response_id" || header[16] != "created_at" {
-		t.Fatalf("unexpected export header: first=%q last=%q", header[0], header[16])
+	if header[0] != "response_id" || header[17] != "created_at" {
+		t.Fatalf("unexpected export header: first=%q last=%q", header[0], header[17])
 	}
 
 	_ = token
