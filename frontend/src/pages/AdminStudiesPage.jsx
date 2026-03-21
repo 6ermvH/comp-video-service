@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { api } from '../api/client.js'
 import { useApiCall } from '../hooks/useApiCall.js'
 
@@ -55,6 +55,23 @@ export default function AdminStudiesPage() {
   const [editStudy, setEditStudy] = useState(null)
   const [editForm, setEditForm] = useState({})
   const [saving, setSaving] = useState(false)
+
+  // Import archive state
+  const [showImportForm, setShowImportForm] = useState(false)
+  const [importForm, setImportForm] = useState({
+    name: '',
+    effect_type: 'flooding',
+    max_tasks_per_participant: 20,
+    tie_option_enabled: true,
+    reasons_enabled: true,
+    confidence_enabled: true,
+  })
+  const [importFile, setImportFile] = useState(null)
+  const [importing, setImporting] = useState(false)
+  const [importResult, setImportResult] = useState(null)
+  const [importError, setImportError] = useState(null)
+  const [dragOver, setDragOver] = useState(false)
+  const importFileRef = useRef(null)
 
   const load = async () => {
     setLoading(true)
@@ -120,6 +137,46 @@ export default function AdminStudiesPage() {
     }
   }
 
+  const handleImport = async (e) => {
+    e.preventDefault()
+    if (!importFile) return
+    setImporting(true)
+    setImportError(null)
+    setImportResult(null)
+    try {
+      const fd = new FormData()
+      fd.append('file', importFile)
+      fd.append('name', importForm.name)
+      fd.append('effect_type', importForm.effect_type)
+      fd.append('max_tasks_per_participant', String(Number(importForm.max_tasks_per_participant)))
+      fd.append('tie_option_enabled', String(importForm.tie_option_enabled))
+      fd.append('reasons_enabled', String(importForm.reasons_enabled))
+      fd.append('confidence_enabled', String(importForm.confidence_enabled))
+      const result = await apiCall(() => api.importStudyArchive(fd))
+      setImportResult(result)
+      setImportFile(null)
+      setImportForm({
+        name: '', effect_type: 'flooding', max_tasks_per_participant: 20,
+        tie_option_enabled: true, reasons_enabled: true, confidence_enabled: true,
+      })
+      if (importFileRef.current) importFileRef.current.value = ''
+      load()
+    } catch (err) {
+      setImportError(err.message)
+    } finally {
+      setImporting(false)
+    }
+  }
+
+  const handleImportDrop = (e) => {
+    e.preventDefault()
+    setDragOver(false)
+    const file = e.dataTransfer.files[0]
+    if (file && (file.name.endsWith('.zip') || file.type === 'application/zip')) {
+      setImportFile(file)
+    }
+  }
+
   const copyLink = (studyId) => {
     const url = `${window.location.origin}/?study_id=${studyId}`
     navigator.clipboard.writeText(url)
@@ -132,13 +189,181 @@ export default function AdminStudiesPage() {
         <h1 style={{ fontSize: '24px', fontWeight: 700 }}>Исследования</h1>
         <div style={{ display: 'flex', gap: '8px' }}>
           <button className="btn btn-ghost" onClick={load}>↻ Обновить</button>
-          <button className="btn btn-primary" onClick={() => setShowForm(!showForm)}>
+          <button
+            className="btn btn-ghost"
+            onClick={() => {
+              setShowImportForm(!showImportForm)
+              setShowForm(false)
+              setImportResult(null)
+              setImportError(null)
+            }}
+          >
+            ⬆ Импорт из архива
+          </button>
+          <button className="btn btn-primary" onClick={() => { setShowForm(!showForm); setShowImportForm(false) }}>
             + Создать
           </button>
         </div>
       </div>
 
       {error && <ErrorBox message={error} onClose={() => setError(null)} />}
+
+      {/* Import archive form */}
+      {showImportForm && (
+        <div className="card">
+          <h2 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '4px' }}>
+            Импорт исследования из архива
+          </h2>
+          <p style={{ fontSize: '13px', color: 'var(--color-text-muted)', marginBottom: '20px' }}>
+            Архив должен содержать MP4 файлы с именами в формате:{' '}
+            <code style={{ fontFamily: 'monospace', background: 'var(--color-surface-2)',
+              padding: '2px 6px', borderRadius: '4px' }}>
+              &lt;группа&gt;_&lt;название&gt;_&lt;candidate|baseline&gt;.mp4
+            </code>
+          </p>
+
+          {importError && (
+            <div style={{ marginBottom: '16px' }}>
+              <ErrorBox message={importError} onClose={() => setImportError(null)} />
+            </div>
+          )}
+
+          {importResult && (
+            <ImportResultBox result={importResult} onClose={() => setImportResult(null)} />
+          )}
+
+          <form onSubmit={handleImport} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {/* Drop zone */}
+            <div
+              onDragOver={(e) => { e.preventDefault(); setDragOver(true) }}
+              onDragLeave={() => setDragOver(false)}
+              onDrop={handleImportDrop}
+              onClick={() => importFileRef.current?.click()}
+              style={{
+                border: `2px dashed ${dragOver ? '#6c63ff' : 'var(--color-border)'}`,
+                borderRadius: 'var(--radius-sm)',
+                padding: '28px 16px',
+                textAlign: 'center',
+                cursor: 'pointer',
+                background: dragOver ? 'rgba(108,99,255,0.07)' : 'transparent',
+                transition: 'border-color 0.15s, background 0.15s',
+              }}
+            >
+              <input
+                ref={importFileRef}
+                type="file"
+                accept=".zip,application/zip"
+                style={{ display: 'none' }}
+                onChange={(e) => setImportFile(e.target.files[0] || null)}
+              />
+              {importFile ? (
+                <div>
+                  <div style={{ fontSize: '20px', marginBottom: '4px' }}>📦</div>
+                  <div style={{ fontSize: '14px', fontWeight: 500 }}>{importFile.name}</div>
+                  <div style={{ fontSize: '12px', color: 'var(--color-text-muted)', marginTop: '4px' }}>
+                    {(importFile.size / 1024 / 1024).toFixed(1)} МБ
+                  </div>
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); setImportFile(null); if (importFileRef.current) importFileRef.current.value = '' }}
+                    style={{ marginTop: '8px', fontSize: '12px', background: 'none', border: 'none',
+                      color: 'var(--color-text-muted)', cursor: 'pointer', textDecoration: 'underline' }}
+                  >
+                    Выбрать другой
+                  </button>
+                </div>
+              ) : (
+                <div>
+                  <div style={{ fontSize: '20px', marginBottom: '4px' }}>📁</div>
+                  <div style={{ fontSize: '14px', color: 'var(--color-text-muted)' }}>
+                    Перетащите ZIP-архив или{' '}
+                    <span style={{ color: '#6c63ff', textDecoration: 'underline' }}>выберите файл</span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Name + Effect type */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px' }}>
+              <div>
+                <label className="label">Название исследования *</label>
+                <input
+                  className="input"
+                  required
+                  value={importForm.name}
+                  onChange={(e) => setImportForm({ ...importForm, name: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="label">Тип эффекта</label>
+                <select
+                  className="input"
+                  value={importForm.effect_type}
+                  onChange={(e) => setImportForm({ ...importForm, effect_type: e.target.value })}
+                >
+                  {EFFECT_TYPES.map((t) => (
+                    <option key={t} value={t}>{t}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Max tasks */}
+            <div>
+              <label className="label">Заданий на участника</label>
+              <input
+                className="input"
+                type="number"
+                min={1}
+                max={100}
+                value={importForm.max_tasks_per_participant}
+                onChange={(e) => setImportForm({ ...importForm, max_tasks_per_participant: e.target.value })}
+                style={{ maxWidth: '160px' }}
+              />
+            </div>
+
+            {/* Checkboxes */}
+            <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap' }}>
+              {[
+                { key: 'tie_option_enabled', label: 'Опция "Равны"' },
+                { key: 'reasons_enabled', label: 'Причины выбора' },
+                { key: 'confidence_enabled', label: 'Уверенность' },
+              ].map(({ key, label }) => (
+                <label key={key} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '14px' }}>
+                  <input
+                    type="checkbox"
+                    checked={importForm[key]}
+                    onChange={(e) => setImportForm({ ...importForm, [key]: e.target.checked })}
+                  />
+                  {label}
+                </label>
+              ))}
+            </div>
+
+            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+              <button
+                type="button"
+                className="btn btn-ghost"
+                onClick={() => { setShowImportForm(false); setImportResult(null); setImportError(null) }}
+              >
+                Отмена
+              </button>
+              <button
+                type="submit"
+                className="btn btn-primary"
+                disabled={importing || !importFile}
+              >
+                {importing ? (
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span className="spinner" style={{ width: '14px', height: '14px', borderWidth: '2px' }} />
+                    Импортируется…
+                  </span>
+                ) : 'Импортировать'}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
 
       {/* Create form */}
       {showForm && (
@@ -389,6 +614,47 @@ function ErrorBox({ message, onClose }) {
     }}>
       <span>{message}</span>
       <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#ff6584', cursor: 'pointer' }}>✕</button>
+    </div>
+  )
+}
+
+function ImportResultBox({ result, onClose }) {
+  return (
+    <div style={{
+      padding: '16px', background: 'rgba(67,217,139,0.08)',
+      border: '1px solid rgba(67,217,139,0.3)', borderRadius: 'var(--radius-sm)',
+      fontSize: '14px', marginBottom: '16px',
+    }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <div style={{ fontWeight: 600, color: '#43d98b', marginBottom: '10px' }}>
+          Импорт завершён успешно
+        </div>
+        <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--color-text-muted)', cursor: 'pointer' }}>✕</button>
+      </div>
+      <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap' }}>
+        {[
+          { label: 'Групп создано', value: result.groups_created },
+          { label: 'Пар создано', value: result.pairs_created },
+          { label: 'Видео загружено', value: result.videos_uploaded },
+        ].map(({ label, value }) => (
+          <div key={label} style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: '24px', fontWeight: 700, color: '#43d98b' }}>{value ?? '—'}</div>
+            <div style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>{label}</div>
+          </div>
+        ))}
+      </div>
+      {result.errors && result.errors.length > 0 && (
+        <div style={{ marginTop: '12px' }}>
+          <div style={{ fontSize: '13px', fontWeight: 600, color: '#f0b429', marginBottom: '6px' }}>
+            Предупреждения ({result.errors.length}):
+          </div>
+          <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '13px', color: 'var(--color-text-muted)' }}>
+            {result.errors.map((err, i) => (
+              <li key={i}>{err}</li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   )
 }
