@@ -20,7 +20,7 @@ const STATUS_LABELS = {
   draft: 'Черновик', active: 'Активно', paused: 'Пауза', archived: 'Архив',
 }
 
-const EFFECT_TYPES = ['flooding', 'explosion', 'mixed']
+const DEFAULT_EFFECT_TYPES = ['flooding', 'explosion', 'mixed']
 
 const DEFAULT_INSTRUCTIONS = `Будут представлены видео А и B, выберите лучшее видео в целом.
 
@@ -72,6 +72,10 @@ export default function AdminStudiesPage() {
   const [importError, setImportError] = useState(null)
   const [dragOver, setDragOver] = useState(false)
   const importFileRef = useRef(null)
+
+  const uniqueEffectTypes = studies.length > 0
+    ? [...new Set(studies.map((s) => s.effect_type).filter(Boolean))]
+    : DEFAULT_EFFECT_TYPES
 
   const load = async () => {
     setLoading(true)
@@ -296,15 +300,16 @@ export default function AdminStudiesPage() {
               </div>
               <div>
                 <label className="label">Тип эффекта</label>
-                <select
+                <input
                   className="input"
+                  list="effect-types-import"
+                  placeholder="Введите или выберите тип..."
                   value={importForm.effect_type}
                   onChange={(e) => setImportForm({ ...importForm, effect_type: e.target.value })}
-                >
-                  {EFFECT_TYPES.map((t) => (
-                    <option key={t} value={t}>{t}</option>
-                  ))}
-                </select>
+                />
+                <datalist id="effect-types-import">
+                  {uniqueEffectTypes.map((t) => <option key={t} value={t} />)}
+                </datalist>
               </div>
             </div>
 
@@ -380,12 +385,16 @@ export default function AdminStudiesPage() {
               </div>
               <div>
                 <label className="label">Тип эффекта</label>
-                <select className="input" value={form.effect_type}
-                  onChange={(e) => setForm({ ...form, effect_type: e.target.value })}>
-                  {EFFECT_TYPES.map((t) => (
-                    <option key={t} value={t}>{t}</option>
-                  ))}
-                </select>
+                <input
+                  className="input"
+                  list="effect-types-create"
+                  placeholder="Введите или выберите тип..."
+                  value={form.effect_type}
+                  onChange={(e) => setForm({ ...form, effect_type: e.target.value })}
+                />
+                <datalist id="effect-types-create">
+                  {uniqueEffectTypes.map((t) => <option key={t} value={t} />)}
+                </datalist>
               </div>
             </div>
 
@@ -540,10 +549,16 @@ export default function AdminStudiesPage() {
                 </div>
                 <div>
                   <label className="label">Тип эффекта</label>
-                  <select className="input" value={editForm.effect_type}
-                    onChange={(e) => setEditForm({ ...editForm, effect_type: e.target.value })}>
-                    {EFFECT_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
-                  </select>
+                  <input
+                    className="input"
+                    list="effect-types-edit"
+                    placeholder="Введите или выберите тип..."
+                    value={editForm.effect_type}
+                    onChange={(e) => setEditForm({ ...editForm, effect_type: e.target.value })}
+                  />
+                  <datalist id="effect-types-edit">
+                    {uniqueEffectTypes.map((t) => <option key={t} value={t} />)}
+                  </datalist>
                 </div>
               </div>
 
