@@ -14,6 +14,7 @@ import (
 	context "context"
 	io "io"
 	reflect "reflect"
+	time "time"
 
 	uuid "github.com/google/uuid"
 	gomock "go.uber.org/mock/gomock"
@@ -73,6 +74,21 @@ func (mr *MockassetVideoRepositoryMockRecorder) Delete(ctx, id any) *gomock.Call
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Delete", reflect.TypeOf((*MockassetVideoRepository)(nil).Delete), ctx, id)
 }
 
+// GetByID mocks base method.
+func (m *MockassetVideoRepository) GetByID(ctx context.Context, id uuid.UUID) (*model.Video, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetByID", ctx, id)
+	ret0, _ := ret[0].(*model.Video)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetByID indicates an expected call of GetByID.
+func (mr *MockassetVideoRepositoryMockRecorder) GetByID(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByID", reflect.TypeOf((*MockassetVideoRepository)(nil).GetByID), ctx, id)
+}
+
 // MockassetStorage is a mock of assetStorage interface.
 type MockassetStorage struct {
 	ctrl     *gomock.Controller
@@ -123,4 +139,19 @@ func (m *MockassetStorage) Upload(ctx context.Context, key, contentType string, 
 func (mr *MockassetStorageMockRecorder) Upload(ctx, key, contentType, body, size any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Upload", reflect.TypeOf((*MockassetStorage)(nil).Upload), ctx, key, contentType, body, size)
+}
+
+// PresignedURL mocks base method.
+func (m *MockassetStorage) PresignedURL(ctx context.Context, key string, ttl time.Duration) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PresignedURL", ctx, key, ttl)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// PresignedURL indicates an expected call of PresignedURL.
+func (mr *MockassetStorageMockRecorder) PresignedURL(ctx, key, ttl any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PresignedURL", reflect.TypeOf((*MockassetStorage)(nil).PresignedURL), ctx, key, ttl)
 }

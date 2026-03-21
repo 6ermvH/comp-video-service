@@ -26,7 +26,7 @@ type mockStudyService struct {
 	listGroupsFn      func(context.Context, uuid.UUID) ([]*model.Group, error)
 	createGroupFn     func(context.Context, uuid.UUID, *model.CreateGroupRequest) (*model.Group, error)
 	listSourceItemsFn func(context.Context, *uuid.UUID, *uuid.UUID) ([]*model.SourceItem, error)
-	listAssetsFn      func(context.Context, int, int) ([]*model.Video, int, error)
+	listAssetsFn      func(context.Context, int, int, string) ([]*model.Video, int, error)
 	listFreeAssetsFn  func(context.Context) ([]*model.Video, error)
 	createPairFn      func(context.Context, uuid.UUID, *model.CreatePairRequest) (*model.SourceItem, error)
 	deletePairFn      func(context.Context, uuid.UUID) error
@@ -50,8 +50,8 @@ func (m *mockStudyService) CreateGroup(ctx context.Context, id uuid.UUID, r *mod
 func (m *mockStudyService) ListSourceItems(ctx context.Context, sid *uuid.UUID, gid *uuid.UUID) ([]*model.SourceItem, error) {
 	return m.listSourceItemsFn(ctx, sid, gid)
 }
-func (m *mockStudyService) ListAssets(ctx context.Context, page, perPage int) ([]*model.Video, int, error) {
-	return m.listAssetsFn(ctx, page, perPage)
+func (m *mockStudyService) ListAssets(ctx context.Context, page, perPage int, search string) ([]*model.Video, int, error) {
+	return m.listAssetsFn(ctx, page, perPage, search)
 }
 func (m *mockStudyService) ListFreeAssets(ctx context.Context) ([]*model.Video, error) {
 	return m.listFreeAssetsFn(ctx)
@@ -64,8 +64,9 @@ func (m *mockStudyService) DeletePair(ctx context.Context, id uuid.UUID) error {
 }
 
 type mockAssetService struct {
-	uploadFn func(context.Context, service.AssetUploadInput) (*model.Video, error)
-	deleteFn func(context.Context, uuid.UUID) error
+	uploadFn          func(context.Context, service.AssetUploadInput) (*model.Video, error)
+	deleteFn          func(context.Context, uuid.UUID) error
+	getPresignedURLFn func(context.Context, uuid.UUID) (string, error)
 }
 
 func (m *mockAssetService) Upload(ctx context.Context, in service.AssetUploadInput) (*model.Video, error) {
@@ -73,6 +74,12 @@ func (m *mockAssetService) Upload(ctx context.Context, in service.AssetUploadInp
 }
 func (m *mockAssetService) DeleteAsset(ctx context.Context, id uuid.UUID) error {
 	return m.deleteFn(ctx, id)
+}
+func (m *mockAssetService) GetPresignedURL(ctx context.Context, id uuid.UUID) (string, error) {
+	if m.getPresignedURLFn != nil {
+		return m.getPresignedURLFn(ctx, id)
+	}
+	return "", nil
 }
 
 type mockAnalyticsService struct {
@@ -382,7 +389,7 @@ func TestAdminHandlerListAssetsAndFreeAssets(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	h := NewAdminHandler(
 		&mockStudyService{
-			listAssetsFn: func(_ context.Context, page, perPage int) ([]*model.Video, int, error) {
+			listAssetsFn: func(_ context.Context, page, perPage int, search string) ([]*model.Video, int, error) {
 				if page != 2 || perPage != 10 {
 					t.Fatalf("unexpected pagination: page=%d per_page=%d", page, perPage)
 				}
@@ -705,4 +712,74 @@ func TestAdminHandlerImportArchiveNoImportSvc(t *testing.T) {
 	if w.Code != http.StatusInternalServerError {
 		t.Fatalf("expected 500 when importSvc is nil, got %d", w.Code)
 	}
+}
+
+func TestAdminHandlerGetAssetURL(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	assetID := uuid.New()
+
+	t.Run("success", func(t *testing.T) {
+		h := NewAdminHandler(
+			&mockStudyService{},
+			&mockAssetService{
+				getPresignedURLFn: func(_ context.Context, id uuid.UUID) (string, error) {
+					if id != assetID {
+						t.Fatalf("unexpected id: %s", id)
+					}
+					return "https://example.com/video.mp4", nil
+				},
+			},
+			&mockAnalyticsService{},
+			&mockQCService{},
+			&mockExportService{},
+		)
+		r := gin.New()
+		r.GET("/assets/:id/url", h.GetAssetURL)
+
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/assets/"+assetID.String()+"/url", nil))
+		if w.Code != http.StatusOK {
+			t.Fatalf("expected 200, got %d: %s", w.Code, w.Body.String())
+		}
+	})
+
+	t.Run("invalid id", func(t *testing.T) {
+		h := NewAdminHandler(
+			&mockStudyService{},
+			&mockAssetService{},
+			&mockAnalyticsService{},
+			&mockQCService{},
+			&mockExportService{},
+		)
+		r := gin.New()
+		r.GET("/assets/:id/url", h.GetAssetURL)
+
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/assets/not-a-uuid/url", nil))
+		if w.Code != http.StatusBadRequest {
+			t.Fatalf("expected 400, got %d", w.Code)
+		}
+	})
+
+	t.Run("not found", func(t *testing.T) {
+		h := NewAdminHandler(
+			&mockStudyService{},
+			&mockAssetService{
+				getPresignedURLFn: func(_ context.Context, _ uuid.UUID) (string, error) {
+					return "", service.ErrAssetNotFound
+				},
+			},
+			&mockAnalyticsService{},
+			&mockQCService{},
+			&mockExportService{},
+		)
+		r := gin.New()
+		r.GET("/assets/:id/url", h.GetAssetURL)
+
+		w := httptest.NewRecorder()
+		r.ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/assets/"+assetID.String()+"/url", nil))
+		if w.Code != http.StatusNotFound {
+			t.Fatalf("expected 404, got %d", w.Code)
+		}
+	})
 }
