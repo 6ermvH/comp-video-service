@@ -165,6 +165,14 @@ export const api = {
   createStudy: (data) =>
     request('/admin/studies', { method: 'POST', body: JSON.stringify(data) }),
 
+  /**
+   * POST /admin/studies/import-archive — multipart fields:
+   *   file (zip), name, effect_type, max_tasks_per_participant,
+   *   tie_option_enabled, reasons_enabled, confidence_enabled
+   */
+  importStudyArchive: (formData) =>
+    requestMultipart('/admin/studies/import-archive', formData),
+
   updateStudy: (id, data) =>
     request(`/admin/studies/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
 
