@@ -20,7 +20,7 @@ export default function AdminPairsPage() {
 
   // Pair builder state
   const [freeAssets, setFreeAssets]       = useState([])
-  const [pairForm, setPairForm]           = useState({ baseline_video_id: '', candidate_video_id: '', group_id: '', pair_code: '', difficulty: '' })
+  const [pairForm, setPairForm]           = useState({ baseline_video_id: '', candidate_video_id: '', group_id: '', pair_code: '', difficulty: '', is_attention_check: 'false' })
   const [creatingPair, setCreatingPair]   = useState(false)
   const [showPairBuilder, setShowPairBuilder] = useState(false)
 
@@ -87,9 +87,10 @@ export default function AdminPairsPage() {
         candidate_video_id: pairForm.candidate_video_id,
         pair_code: pairForm.pair_code,
         difficulty: pairForm.difficulty,
+        is_attention_check: pairForm.is_attention_check === 'true',
       }))
       setSuccessMsg('Пара создана')
-      setPairForm({ baseline_video_id: '', candidate_video_id: '', group_id: '', pair_code: '', difficulty: '' })
+      setPairForm({ baseline_video_id: '', candidate_video_id: '', group_id: '', pair_code: '', difficulty: '', is_attention_check: 'false' })
       setShowPairBuilder(false)
       const [sData, aData] = await Promise.all([
         api.getSourceItems({ study_id: selectedStudy }),
@@ -121,12 +122,6 @@ export default function AdminPairsPage() {
   }
 
   const copyText = (text) => navigator.clipboard.writeText(text)
-
-  const QC_COLORS = {
-    ok:      { bg: 'rgba(67,217,139,0.1)',  text: '#43d98b' },
-    suspect: { bg: 'rgba(240,180,41,0.1)',  text: '#f0b429' },
-    flagged: { bg: 'rgba(255,77,109,0.1)',  text: '#ff6584' },
-  }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
@@ -316,6 +311,14 @@ export default function AdminPairsPage() {
                         <option value="hard">hard</option>
                       </select>
                     </div>
+                    <div>
+                      <label className="label">Attention check</label>
+                      <select className="input" value={pairForm.is_attention_check}
+                        onChange={(e) => setPairForm({ ...pairForm, is_attention_check: e.target.value })}>
+                        <option value="false">Нет</option>
+                        <option value="true">Да (ловушечная пара)</option>
+                      </select>
+                    </div>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                     <button type="submit" className="btn btn-primary" disabled={creatingPair}>
@@ -346,16 +349,14 @@ export default function AdminPairsPage() {
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                   <thead>
                     <tr style={{ borderBottom: '1px solid var(--color-border)' }}>
-                      {['Pair Code', 'Группа', 'Сложность', 'Ассеты', 'Ответы', 'QC', 'Attention', ''].map((h) => (
+                      {['Pair Code', 'Группа', 'Сложность', 'Ассеты', 'Ответы', 'Attention', ''].map((h) => (
                         <th key={h} style={{ textAlign: 'left', padding: '8px 12px',
                           color: 'var(--color-text-muted)', fontWeight: 500 }}>{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
-                    {sourceItems.map((item) => {
-                      const qcColor = QC_COLORS[item.qc_flag] || QC_COLORS.ok
-                      return (
+                    {sourceItems.map((item) => (
                         <tr key={item.id} style={{ borderBottom: '1px solid var(--color-border)' }}>
                           <td style={{ padding: '10px 12px', fontFamily: 'monospace' }}>
                             {item.pair_code || '—'}
@@ -373,14 +374,6 @@ export default function AdminPairsPage() {
                           </td>
                           <td style={{ padding: '10px 12px' }}>{item.asset_count ?? '—'}</td>
                           <td style={{ padding: '10px 12px' }}>{item.response_count ?? '—'}</td>
-                          <td style={{ padding: '10px 12px' }}>
-                            {item.qc_flag && (
-                              <span style={{ padding: '2px 8px', borderRadius: '4px', fontSize: '12px',
-                                background: qcColor.bg, color: qcColor.text }}>
-                                {item.qc_flag}
-                              </span>
-                            )}
-                          </td>
                           <td style={{ padding: '10px 12px', textAlign: 'center' }}>
                             {item.is_attention_check ? '✓' : ''}
                           </td>
@@ -394,8 +387,7 @@ export default function AdminPairsPage() {
                             </button>
                           </td>
                         </tr>
-                      )
-                    })}
+                    ))}
                   </tbody>
                 </table>
               </div>
