@@ -153,13 +153,46 @@ func (r *VideoRepository) ListAll(ctx context.Context) ([]*model.Video, error) {
 }
 
 // ListPaged returns a page of video assets and the total count.
-func (r *VideoRepository) ListPaged(ctx context.Context, page, perPage int) ([]*model.Video, int, error) {
+// If search is non-empty, results are filtered by title using case-insensitive ILIKE.
+func (r *VideoRepository) ListPaged(ctx context.Context, page, perPage int, search string) ([]*model.Video, int, error) {
+	offset := (page - 1) * perPage
+
+	if search != "" {
+		pattern := "%" + search + "%"
+		var total int
+		if err := r.db.QueryRow(ctx, `SELECT COUNT(*) FROM video_assets WHERE title ILIKE $1`, pattern).Scan(&total); err != nil {
+			return nil, 0, fmt.Errorf("count videos: %w", err)
+		}
+		q := `
+			SELECT id, source_item_id, method_type, title, description, s3_key, duration_ms,
+				status, width, height, fps, codec, checksum, created_at, updated_at
+			FROM video_assets
+			WHERE title ILIKE $3
+			ORDER BY created_at DESC
+			LIMIT $1 OFFSET $2`
+		rows, err := r.db.Query(ctx, q, perPage, offset, pattern)
+		if err != nil {
+			return nil, 0, fmt.Errorf("list paged videos: %w", err)
+		}
+		defer rows.Close()
+		var out []*model.Video
+		for rows.Next() {
+			v, err := scanVideo(rows)
+			if err != nil {
+				return nil, 0, err
+			}
+			out = append(out, v)
+		}
+		if out == nil {
+			out = make([]*model.Video, 0)
+		}
+		return out, total, rows.Err()
+	}
+
 	var total int
 	if err := r.db.QueryRow(ctx, `SELECT COUNT(*) FROM video_assets`).Scan(&total); err != nil {
 		return nil, 0, fmt.Errorf("count videos: %w", err)
 	}
-
-	offset := (page - 1) * perPage
 	q := `
 		SELECT id, source_item_id, method_type, title, description, s3_key, duration_ms,
 			status, width, height, fps, codec, checksum, created_at, updated_at

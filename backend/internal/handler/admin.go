@@ -24,7 +24,7 @@ type studyService interface {
 	ListGroups(ctx context.Context, studyID uuid.UUID) ([]*model.Group, error)
 	CreateGroup(ctx context.Context, studyID uuid.UUID, req *model.CreateGroupRequest) (*model.Group, error)
 	ListSourceItems(ctx context.Context, studyID *uuid.UUID, groupID *uuid.UUID) ([]*model.SourceItem, error)
-	ListAssets(ctx context.Context, page, perPage int) ([]*model.Video, int, error)
+	ListAssets(ctx context.Context, page, perPage int, search string) ([]*model.Video, int, error)
 	ListFreeAssets(ctx context.Context) ([]*model.Video, error)
 	CreatePair(ctx context.Context, studyID uuid.UUID, req *model.CreatePairRequest) (*model.SourceItem, error)
 	DeletePair(ctx context.Context, id uuid.UUID) error
@@ -37,6 +37,7 @@ type importService interface {
 type assetService interface {
 	Upload(ctx context.Context, input service.AssetUploadInput) (*model.Video, error)
 	DeleteAsset(ctx context.Context, id uuid.UUID) error
+	GetPresignedURL(ctx context.Context, id uuid.UUID) (string, error)
 }
 
 type analyticsService interface {
@@ -342,8 +343,9 @@ func (h *AdminHandler) ListSourceItems(c *gin.Context) {
 // @Tags         admin
 // @Produce      json
 // @Security     BearerAuth
-// @Param        page      query  int  false  "Page number (default 1)"
-// @Param        per_page  query  int  false  "Items per page (default 20, max 100)"
+// @Param        page      query  int     false  "Page number (default 1)"
+// @Param        per_page  query  int     false  "Items per page (default 20, max 100)"
+// @Param        search    query  string  false  "Filter by title (case-insensitive substring)"
 // @Success      200  {object}  map[string]interface{}
 // @Failure      500  {object}  map[string]string
 // @Router       /admin/assets [get]
@@ -356,8 +358,9 @@ func (h *AdminHandler) ListAssets(c *gin.Context) {
 	if v, err := strconv.Atoi(c.Query("per_page")); err == nil && v > 0 && v <= 100 {
 		perPage = v
 	}
+	search := strings.TrimSpace(c.Query("search"))
 
-	assets, total, err := h.studySvc.ListAssets(c.Request.Context(), page, perPage)
+	assets, total, err := h.studySvc.ListAssets(c.Request.Context(), page, perPage, search)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -478,6 +481,37 @@ func (h *AdminHandler) DeleteAsset(c *gin.Context) {
 		return
 	}
 	c.Status(http.StatusNoContent)
+}
+
+// GetAssetURL godoc
+// @Summary      Get presigned URL for a video asset
+// @Description  Returns a presigned (or public) URL to stream or download the video.
+// @Tags         admin
+// @Produce      json
+// @Security     BearerAuth
+// @Security     CSRFToken
+// @Param        id   path      string  true  "Asset UUID"
+// @Success      200  {object}  map[string]string
+// @Failure      400  {object}  map[string]string
+// @Failure      404  {object}  map[string]string
+// @Failure      500  {object}  map[string]string
+// @Router       /admin/assets/{id}/url [get]
+func (h *AdminHandler) GetAssetURL(c *gin.Context) {
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
+		return
+	}
+	url, err := h.assetSvc.GetPresignedURL(c.Request.Context(), id)
+	if err != nil {
+		if errors.Is(err, service.ErrAssetNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "asset not found"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"url": url})
 }
 
 // AnalyticsOverview godoc

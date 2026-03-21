@@ -41,7 +41,7 @@ type studyVideoRepository interface {
 	LinkOrCreate(ctx context.Context, v *model.Video) (*model.Video, error)
 	Link(ctx context.Context, videoID uuid.UUID, sourceItemID uuid.UUID, methodType string) error
 	ListAll(ctx context.Context) ([]*model.Video, error)
-	ListPaged(ctx context.Context, page, perPage int) ([]*model.Video, int, error)
+	ListPaged(ctx context.Context, page, perPage int, search string) ([]*model.Video, int, error)
 	ListFree(ctx context.Context) ([]*model.Video, error)
 }
 
@@ -106,8 +106,8 @@ func (s *StudyService) ListSourceItems(ctx context.Context, studyID *uuid.UUID, 
 	return s.sourceItemRepo.ListWithFilters(ctx, studyID, groupID)
 }
 
-func (s *StudyService) ListAssets(ctx context.Context, page, perPage int) ([]*model.Video, int, error) {
-	return s.videoRepo.ListPaged(ctx, page, perPage)
+func (s *StudyService) ListAssets(ctx context.Context, page, perPage int, search string) ([]*model.Video, int, error) {
+	return s.videoRepo.ListPaged(ctx, page, perPage, search)
 }
 
 func (s *StudyService) ListFreeAssets(ctx context.Context) ([]*model.Video, error) {

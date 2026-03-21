@@ -137,3 +137,44 @@ func TestAssetServiceDeleteAssetBlocked(t *testing.T) {
 		t.Fatalf("expected ErrAssetInUse, got %v", err)
 	}
 }
+
+func TestAssetServiceGetPresignedURL(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		repo := NewMockassetVideoRepository(ctrl)
+		s3 := NewMockassetStorage(ctrl)
+		svc := newAssetServiceWithDeps(repo, s3)
+
+		id := uuid.New()
+		video := &model.Video{ID: id, S3Key: "videos/test.mp4"}
+		repo.EXPECT().GetByID(gomock.Any(), id).Return(video, nil)
+		s3.EXPECT().PresignedURL(gomock.Any(), "videos/test.mp4", gomock.Any()).Return("https://example.com/test.mp4", nil)
+
+		url, err := svc.GetPresignedURL(context.Background(), id)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if url != "https://example.com/test.mp4" {
+			t.Fatalf("unexpected url: %s", url)
+		}
+	})
+
+	t.Run("not found", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+
+		repo := NewMockassetVideoRepository(ctrl)
+		s3 := NewMockassetStorage(ctrl)
+		svc := newAssetServiceWithDeps(repo, s3)
+
+		id := uuid.New()
+		repo.EXPECT().GetByID(gomock.Any(), id).Return(nil, errors.New("no rows"))
+
+		_, err := svc.GetPresignedURL(context.Background(), id)
+		if err == nil {
+			t.Fatal("expected error")
+		}
+	})
+}
