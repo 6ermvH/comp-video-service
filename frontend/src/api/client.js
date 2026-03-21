@@ -192,8 +192,14 @@ export const api = {
   uploadAsset: (formData) =>
     requestMultipart('/admin/assets/upload', formData),
 
-  getAssets:     (page = 1, perPage = 20) => request(`/admin/assets?page=${page}&per_page=${perPage}`),
+  getAssets: (page = 1, perPage = 20, search = '') => {
+    const params = new URLSearchParams({ page, per_page: perPage })
+    if (search) params.set('search', search)
+    return request(`/admin/assets?${params}`)
+  },
   getFreeAssets: () => request('/admin/assets/free'),
+
+  getAssetUrl: (id) => request(`/admin/assets/${id}/url`),
 
   deleteAsset: (id) => request(`/admin/assets/${id}`, { method: 'DELETE' }),
   deletePair:  (id) => request(`/admin/source-items/${id}`, { method: 'DELETE' }),
