@@ -1,5 +1,5 @@
 /**
- * ReasonsSelector — pick up to 2 reason tags explaining your choice.
+ * ReasonsSelector — pick reason tags explaining your choice.
  * Only shown after a choice (left/right) is made, not for "tie".
  */
 const REASONS = [
@@ -9,14 +9,12 @@ const REASONS = [
   { code: 'integration', label: 'Визуальная целостность' },
 ]
 
-const MAX_SELECTED = 2
-
 export default function ReasonsSelector({ selected, onChange, disabled }) {
   const toggle = (code) => {
     if (disabled) return
     if (selected.includes(code)) {
       onChange(selected.filter((c) => c !== code))
-    } else if (selected.length < MAX_SELECTED) {
+    } else {
       onChange([...selected, code])
     }
   }
@@ -24,27 +22,25 @@ export default function ReasonsSelector({ selected, onChange, disabled }) {
   return (
     <div>
       <p style={{ fontSize: '12px', color: 'var(--color-text-muted)', marginBottom: '4px' }}>
-        Что повлияло на ваш выбор? (необязательно, до {MAX_SELECTED})
+        Что повлияло на ваш выбор? (необязательно, можно выбрать несколько)
       </p>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
         {REASONS.map((r) => {
           const active = selected.includes(r.code)
-          const maxed = !active && selected.length >= MAX_SELECTED
           return (
             <button
               key={r.code}
               onClick={() => toggle(r.code)}
-              disabled={disabled || maxed}
+              disabled={disabled}
               style={{
                 padding: '5px 10px',
                 border: `1px solid ${active ? 'var(--color-primary)' : 'var(--color-border)'}`,
                 borderRadius: '99px',
                 background: active ? 'rgba(108,99,255,0.2)' : 'transparent',
-                color: active ? 'var(--color-primary-h)' : maxed ? 'var(--color-text-muted)' : 'var(--color-text)',
+                color: active ? 'var(--color-primary-h)' : 'var(--color-text)',
                 fontSize: '12px',
-                cursor: disabled || maxed ? 'not-allowed' : 'pointer',
+                cursor: disabled ? 'not-allowed' : 'pointer',
                 transition: 'all 0.15s ease',
-                opacity: maxed ? 0.5 : 1,
                 fontFamily: 'var(--font-family)',
               }}
             >
