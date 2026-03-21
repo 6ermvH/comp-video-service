@@ -57,11 +57,6 @@ func NewExportService(db *pgxpool.Pool) *ExportService {
 	return &ExportService{db: pgxExportDB{db: db}}
 }
 
-const exportCSVHeaders = "response_id,participant_id,study_name,group_name,pair_code," +
-	"is_suspect,candidate_position,candidate_chosen," +
-	"reason_motion,reason_artifacts,reason_overall,reason_integration," +
-	"confidence,response_time_ms,replay_count,is_attention_check,created_at"
-
 var exportCSVHeaderSlice = []string{
 	"response_id", "participant_id", "study_name", "group_name", "pair_code",
 	"is_suspect", "candidate_position", "candidate_chosen",
