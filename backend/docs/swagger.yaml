@@ -770,25 +770,6 @@ paths:
       summary: Export responses as CSV
       tags:
       - admin
-  /admin/export/json:
-    get:
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              additionalProperties:
-                type: string
-              type: object
-            type: array
-      security:
-      - BearerAuth: []
-      - CSRFToken: []
-      summary: Export responses as JSON
-      tags:
-      - admin
   /admin/export/study/{id}/csv:
     get:
       description: Returns a CSV with computed columns (candidate_position, candidate_chosen,

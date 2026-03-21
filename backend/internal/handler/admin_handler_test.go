@@ -114,13 +114,11 @@ func (m *mockQCService) BuildReport(ctx context.Context) (*service.QCReport, err
 }
 
 type mockExportService struct {
-	csvFn        func(context.Context) ([]byte, error)
-	jsonFn       func(context.Context) ([]byte, error)
-	studyCSVFn   func(context.Context, uuid.UUID) ([]byte, error)
+	csvFn      func(context.Context) ([]byte, error)
+	studyCSVFn func(context.Context, uuid.UUID) ([]byte, error)
 }
 
-func (m *mockExportService) ExportCSV(ctx context.Context) ([]byte, error)  { return m.csvFn(ctx) }
-func (m *mockExportService) ExportJSON(ctx context.Context) ([]byte, error) { return m.jsonFn(ctx) }
+func (m *mockExportService) ExportCSV(ctx context.Context) ([]byte, error) { return m.csvFn(ctx) }
 func (m *mockExportService) ExportStudyCSV(ctx context.Context, studyID uuid.UUID) ([]byte, error) {
 	if m.studyCSVFn != nil {
 		return m.studyCSVFn(ctx, studyID)
@@ -215,7 +213,7 @@ func TestAdminHandlerAnalyticsAndExport(t *testing.T) {
 			},
 		},
 		&mockQCService{reportFn: func(context.Context) (*service.QCReport, error) { return &service.QCReport{TotalResponses: 1}, nil }},
-		&mockExportService{csvFn: func(context.Context) ([]byte, error) { return []byte("a,b\n"), nil }, jsonFn: func(context.Context) ([]byte, error) { return []byte("[]"), nil }},
+		&mockExportService{csvFn: func(context.Context) ([]byte, error) { return []byte("a,b\n"), nil }},
 	)
 	r := gin.New()
 	r.GET("/overview", h.AnalyticsOverview)
@@ -223,9 +221,8 @@ func TestAdminHandlerAnalyticsAndExport(t *testing.T) {
 	r.GET("/study/:id/pairs", h.AnalyticsPairs)
 	r.GET("/qc", h.AnalyticsQC)
 	r.GET("/csv", h.ExportCSV)
-	r.GET("/json", h.ExportJSON)
 
-	cases := []string{"/overview", "/study/" + uuid.New().String(), "/study/" + uuid.New().String() + "/pairs", "/qc", "/csv", "/json"}
+	cases := []string{"/overview", "/study/" + uuid.New().String(), "/study/" + uuid.New().String() + "/pairs", "/qc", "/csv"}
 	for _, path := range cases {
 		w := httptest.NewRecorder()
 		r.ServeHTTP(w, httptest.NewRequest(http.MethodGet, path, nil))
@@ -315,14 +312,12 @@ func TestAdminHandlerListSourceItemsInvalidQueryAndExportErrors(t *testing.T) {
 		&mockAnalyticsService{},
 		&mockQCService{},
 		&mockExportService{
-			csvFn:  func(context.Context) ([]byte, error) { return nil, errors.New("x") },
-			jsonFn: func(context.Context) ([]byte, error) { return nil, errors.New("x") },
+			csvFn: func(context.Context) ([]byte, error) { return nil, errors.New("x") },
 		},
 	)
 	r := gin.New()
 	r.GET("/source-items", h.ListSourceItems)
 	r.GET("/csv", h.ExportCSV)
-	r.GET("/json", h.ExportJSON)
 
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/source-items?study_id=bad", nil))
@@ -348,11 +343,6 @@ func TestAdminHandlerListSourceItemsInvalidQueryAndExportErrors(t *testing.T) {
 		t.Fatalf("expected 500 csv error, got %d", w.Code)
 	}
 
-	w = httptest.NewRecorder()
-	r.ServeHTTP(w, httptest.NewRequest(http.MethodGet, "/json", nil))
-	if w.Code != http.StatusInternalServerError {
-		t.Fatalf("expected 500 json error, got %d", w.Code)
-	}
 }
 
 func TestAdminHandlerDeletePairAndAsset(t *testing.T) {

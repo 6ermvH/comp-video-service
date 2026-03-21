@@ -53,7 +53,6 @@ type qcService interface {
 
 type exportService interface {
 	ExportCSV(ctx context.Context) ([]byte, error)
-	ExportJSON(ctx context.Context) ([]byte, error)
 	ExportStudyCSV(ctx context.Context, studyID uuid.UUID) ([]byte, error)
 }
 
@@ -648,23 +647,6 @@ func (h *AdminHandler) ExportCSV(c *gin.Context) {
 	c.Header("Content-Type", "text/csv")
 	c.Header("Content-Disposition", `attachment; filename="responses.csv"`)
 	c.Data(http.StatusOK, "text/csv", payload)
-}
-
-// ExportJSON godoc
-// @Summary      Export responses as JSON
-// @Tags         admin
-// @Produce      json
-// @Security     BearerAuth
-// @Security     CSRFToken
-// @Success      200  {array}   map[string]string
-// @Router       /admin/export/json [get]
-func (h *AdminHandler) ExportJSON(c *gin.Context) {
-	payload, err := h.exportSvc.ExportJSON(c.Request.Context())
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-	c.Data(http.StatusOK, "application/json", payload)
 }
 
 // ExportStudyCSV godoc
