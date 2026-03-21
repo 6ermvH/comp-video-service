@@ -66,6 +66,26 @@ export default function WelcomePage() {
             Участие является добровольным, исследование полностью анонимно.
             Полученные данные будут использованы только для научных целей.
           </p>
+          <p style={{
+            color: introTextColor,
+            fontSize: introFontSize,
+            lineHeight: paragraphLineHeight,
+            textAlign: 'left',
+            maxWidth: introWidth,
+            margin: '12px auto 0',
+          }}>
+            Для удобного сравнения видео рекомендуется проходить исследование на компьютере.
+          </p>
+          <p style={{
+            color: introTextColor,
+            fontSize: introFontSize,
+            lineHeight: paragraphLineHeight,
+            textAlign: 'left',
+            maxWidth: introWidth,
+            margin: '12px auto 0',
+          }}>
+            Для быстрой загрузки видео рекомендуется отключить VPN.
+          </p>
           <div style={{
             display: 'flex',
             flexDirection: 'column',
@@ -78,6 +98,7 @@ export default function WelcomePage() {
             marginLeft: 'auto',
             marginRight: 'auto',
             alignItems: 'flex-start',
+            textAlign: 'left',
           }}>
             <span>Средняя продолжительность исследования — 15 минут.</span>
             <span>Звук не требуется.</span>
