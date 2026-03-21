@@ -105,6 +105,17 @@ export default function AdminPairsPage() {
     }
   }
 
+  const handleUpdateAttention = async (id, isAttention) => {
+    try {
+      await api.updateSourceItem(id, { is_attention_check: isAttention })
+      setSourceItems(prev => prev.map(item =>
+        item.id === id ? { ...item, is_attention_check: isAttention } : item
+      ))
+    } catch (err) {
+      setError(err.message)
+    }
+  }
+
   const handleDeletePair = async (id) => {
     if (!window.confirm('Удалить пару? Видео вернутся в библиотеку.')) return
     try {
@@ -375,7 +386,26 @@ export default function AdminPairsPage() {
                           <td style={{ padding: '10px 12px' }}>{item.asset_count ?? '—'}</td>
                           <td style={{ padding: '10px 12px' }}>{item.response_count ?? '—'}</td>
                           <td style={{ padding: '10px 12px', textAlign: 'center' }}>
-                            {item.is_attention_check ? '✓' : ''}
+                            <select
+                              value={item.is_attention_check ? 'true' : 'false'}
+                              onChange={(e) => handleUpdateAttention(item.id, e.target.value === 'true')}
+                              className="input"
+                              style={{
+                                fontSize: '12px',
+                                padding: '2px 6px',
+                                height: 'auto',
+                                width: 'auto',
+                                background: item.is_attention_check
+                                  ? 'rgba(255, 180, 50, 0.18)'
+                                  : 'transparent',
+                                borderColor: item.is_attention_check
+                                  ? 'rgba(255, 180, 50, 0.4)'
+                                  : undefined,
+                              }}
+                            >
+                              <option value="false">Нет</option>
+                              <option value="true">Да</option>
+                            </select>
                           </td>
                           <td style={{ padding: '10px 12px' }}>
                             <button

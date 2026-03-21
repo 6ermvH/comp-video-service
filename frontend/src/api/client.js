@@ -212,6 +212,9 @@ export const api = {
     return request(`/admin/source-items${qs ? '?' + qs : ''}`)
   },
 
+  updateSourceItem: (id, body) =>
+    request(`/admin/source-items/${id}`, { method: 'PATCH', body: JSON.stringify(body) }),
+
   // ── Admin: Analytics ─────────────────────────────────────
 
   getAnalyticsOverview:  ()         => request('/admin/analytics/overview'),
