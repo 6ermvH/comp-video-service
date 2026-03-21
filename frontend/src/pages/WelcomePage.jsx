@@ -75,16 +75,8 @@ export default function WelcomePage() {
             margin: '12px auto 0',
           }}>
             Для удобного сравнения видео рекомендуется проходить исследование на компьютере.
-          </p>
-          <p style={{
-            color: introTextColor,
-            fontSize: introFontSize,
-            lineHeight: paragraphLineHeight,
-            textAlign: 'left',
-            maxWidth: introWidth,
-            margin: '12px auto 0',
-          }}>
             Для быстрой загрузки видео рекомендуется отключить VPN.
+            Звук не требуется.
           </p>
           <div style={{
             display: 'flex',
@@ -101,7 +93,6 @@ export default function WelcomePage() {
             textAlign: 'left',
           }}>
             <span>Средняя продолжительность исследования — 15 минут.</span>
-            <span>Звук не требуется.</span>
           </div>
         </div>
 
