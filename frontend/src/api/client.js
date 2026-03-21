@@ -176,6 +176,8 @@ export const api = {
   updateStudy: (id, data) =>
     request(`/admin/studies/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
 
+  deleteStudy: (id) => request(`/admin/studies/${id}`, { method: 'DELETE' }),
+
   // ── Admin: Groups & Pairs ─────────────────────────────────
 
   getGroups: (studyId) =>

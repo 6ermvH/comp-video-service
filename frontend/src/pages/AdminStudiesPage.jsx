@@ -132,6 +132,16 @@ export default function AdminStudiesPage() {
     }
   }
 
+  const handleDelete = async (study) => {
+    if (!window.confirm('Удалить исследование и все связанные данные (группы, пары, ответы)? Это действие необратимо!')) return
+    try {
+      await api.deleteStudy(study.id)
+      load()
+    } catch (err) {
+      setError(err.message)
+    }
+  }
+
   const handleStatusChange = async (studyId, newStatus) => {
     try {
       await api.updateStudy(studyId, { status: newStatus })
@@ -521,6 +531,15 @@ export default function AdminStudiesPage() {
                         → {STATUS_LABELS[s]}
                       </button>
                     ))}
+                    {(study.status === 'draft' || study.status === 'archived') && (
+                      <button
+                        className="btn btn-ghost"
+                        style={{ fontSize: '12px', padding: '6px 10px', color: '#ff4d6d' }}
+                        onClick={() => handleDelete(study)}
+                      >
+                        🗑 Удалить
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
