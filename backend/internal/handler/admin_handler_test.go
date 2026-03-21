@@ -20,16 +20,17 @@ import (
 )
 
 type mockStudyService struct {
-	listStudiesFn     func(context.Context) ([]*model.Study, error)
-	createStudyFn     func(context.Context, *model.CreateStudyRequest) (*model.Study, error)
-	updateStudyFn     func(context.Context, uuid.UUID, *model.UpdateStudyRequest) (*model.Study, error)
-	listGroupsFn      func(context.Context, uuid.UUID) ([]*model.Group, error)
-	createGroupFn     func(context.Context, uuid.UUID, *model.CreateGroupRequest) (*model.Group, error)
-	listSourceItemsFn func(context.Context, *uuid.UUID, *uuid.UUID) ([]*model.SourceItemDetail, error)
-	listAssetsFn      func(context.Context, int, int, string) ([]*model.Video, int, error)
-	listFreeAssetsFn  func(context.Context) ([]*model.Video, error)
-	createPairFn      func(context.Context, uuid.UUID, *model.CreatePairRequest) (*model.SourceItem, error)
-	deletePairFn      func(context.Context, uuid.UUID) error
+	listStudiesFn                func(context.Context) ([]*model.Study, error)
+	createStudyFn                func(context.Context, *model.CreateStudyRequest) (*model.Study, error)
+	updateStudyFn                func(context.Context, uuid.UUID, *model.UpdateStudyRequest) (*model.Study, error)
+	listGroupsFn                 func(context.Context, uuid.UUID) ([]*model.Group, error)
+	createGroupFn                func(context.Context, uuid.UUID, *model.CreateGroupRequest) (*model.Group, error)
+	listSourceItemsFn            func(context.Context, *uuid.UUID, *uuid.UUID) ([]*model.SourceItemDetail, error)
+	listAssetsFn                 func(context.Context, int, int, string) ([]*model.Video, int, error)
+	listFreeAssetsFn             func(context.Context) ([]*model.Video, error)
+	createPairFn                 func(context.Context, uuid.UUID, *model.CreatePairRequest) (*model.SourceItem, error)
+	deletePairFn                 func(context.Context, uuid.UUID) error
+	updateSourceItemAttentionFn  func(context.Context, uuid.UUID, bool) (*model.SourceItemDetail, error)
 }
 
 func (m *mockStudyService) ListStudies(ctx context.Context) ([]*model.Study, error) {
@@ -61,6 +62,12 @@ func (m *mockStudyService) CreatePair(ctx context.Context, id uuid.UUID, req *mo
 }
 func (m *mockStudyService) DeletePair(ctx context.Context, id uuid.UUID) error {
 	return m.deletePairFn(ctx, id)
+}
+func (m *mockStudyService) UpdateSourceItemAttention(ctx context.Context, id uuid.UUID, isAttentionCheck bool) (*model.SourceItemDetail, error) {
+	if m.updateSourceItemAttentionFn != nil {
+		return m.updateSourceItemAttentionFn(ctx, id, isAttentionCheck)
+	}
+	return nil, nil
 }
 
 type mockAssetService struct {
@@ -563,6 +570,90 @@ func TestAdminHandlerUploadAssetBranches(t *testing.T) {
 	if w.Code != http.StatusCreated {
 		t.Fatalf("expected 201, got %d", w.Code)
 	}
+}
+
+func TestAdminHandlerUpdateSourceItem(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	itemID := uuid.New()
+
+	t.Run("success", func(t *testing.T) {
+		h := NewAdminHandler(
+			&mockStudyService{
+				updateSourceItemAttentionFn: func(_ context.Context, id uuid.UUID, isAttentionCheck bool) (*model.SourceItemDetail, error) {
+					if id != itemID {
+						t.Fatalf("unexpected id: %s", id)
+					}
+					return &model.SourceItemDetail{ID: id, IsAttentionCheck: isAttentionCheck, GroupName: "G"}, nil
+				},
+			},
+			&mockAssetService{},
+			&mockAnalyticsService{},
+			&mockQCService{},
+			&mockExportService{},
+		)
+		r := gin.New()
+		r.PATCH("/source-items/:id", h.UpdateSourceItem)
+
+		w := httptest.NewRecorder()
+		req := httptest.NewRequest(http.MethodPatch, "/source-items/"+itemID.String(), mustJSON(t, map[string]any{"is_attention_check": true}))
+		req.Header.Set("Content-Type", "application/json")
+		r.ServeHTTP(w, req)
+		if w.Code != http.StatusOK {
+			t.Fatalf("expected 200, got %d: %s", w.Code, w.Body.String())
+		}
+	})
+
+	t.Run("invalid id", func(t *testing.T) {
+		h := NewAdminHandler(&mockStudyService{}, &mockAssetService{}, &mockAnalyticsService{}, &mockQCService{}, &mockExportService{})
+		r := gin.New()
+		r.PATCH("/source-items/:id", h.UpdateSourceItem)
+
+		w := httptest.NewRecorder()
+		req := httptest.NewRequest(http.MethodPatch, "/source-items/not-a-uuid", mustJSON(t, map[string]any{"is_attention_check": true}))
+		req.Header.Set("Content-Type", "application/json")
+		r.ServeHTTP(w, req)
+		if w.Code != http.StatusBadRequest {
+			t.Fatalf("expected 400, got %d", w.Code)
+		}
+	})
+
+	t.Run("bad json", func(t *testing.T) {
+		h := NewAdminHandler(&mockStudyService{}, &mockAssetService{}, &mockAnalyticsService{}, &mockQCService{}, &mockExportService{})
+		r := gin.New()
+		r.PATCH("/source-items/:id", h.UpdateSourceItem)
+
+		w := httptest.NewRecorder()
+		req := httptest.NewRequest(http.MethodPatch, "/source-items/"+itemID.String(), bytes.NewBufferString("{bad"))
+		req.Header.Set("Content-Type", "application/json")
+		r.ServeHTTP(w, req)
+		if w.Code != http.StatusBadRequest {
+			t.Fatalf("expected 400, got %d", w.Code)
+		}
+	})
+
+	t.Run("service error", func(t *testing.T) {
+		h := NewAdminHandler(
+			&mockStudyService{
+				updateSourceItemAttentionFn: func(_ context.Context, _ uuid.UUID, _ bool) (*model.SourceItemDetail, error) {
+					return nil, errors.New("db error")
+				},
+			},
+			&mockAssetService{},
+			&mockAnalyticsService{},
+			&mockQCService{},
+			&mockExportService{},
+		)
+		r := gin.New()
+		r.PATCH("/source-items/:id", h.UpdateSourceItem)
+
+		w := httptest.NewRecorder()
+		req := httptest.NewRequest(http.MethodPatch, "/source-items/"+itemID.String(), mustJSON(t, map[string]any{"is_attention_check": false}))
+		req.Header.Set("Content-Type", "application/json")
+		r.ServeHTTP(w, req)
+		if w.Code != http.StatusInternalServerError {
+			t.Fatalf("expected 500, got %d", w.Code)
+		}
+	})
 }
 
 // makeTestZIP builds a minimal ZIP archive with the given filenames and returns its bytes.

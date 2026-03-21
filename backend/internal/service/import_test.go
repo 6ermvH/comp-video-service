@@ -58,6 +58,12 @@ func (m *mockSourceItemRepo) ListWithDetails(ctx context.Context, studyID *uuid.
 func (m *mockSourceItemRepo) Delete(ctx context.Context, id uuid.UUID) (bool, error) {
 	return false, nil
 }
+func (m *mockSourceItemRepo) UpdateAttentionCheck(ctx context.Context, id uuid.UUID, isAttentionCheck bool) error {
+	return nil
+}
+func (m *mockSourceItemRepo) GetByIDWithDetails(ctx context.Context, id uuid.UUID) (*model.SourceItemDetail, error) {
+	return nil, nil
+}
 
 type mockImportVideoRepo struct {
 	createFn func(ctx context.Context, v *model.Video) (*model.Video, error)

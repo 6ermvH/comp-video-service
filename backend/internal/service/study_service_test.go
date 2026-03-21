@@ -131,6 +131,28 @@ func TestStudyServiceUpdateStudyValidation(t *testing.T) {
 	}
 }
 
+func TestStudyServiceUpdateSourceItemAttention(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	sourceRepo := NewMocksourceItemRepository(ctrl)
+	svc := NewStudyService(NewMockstudyRepository(ctrl), NewMockgroupRepository(ctrl), sourceRepo, nil)
+
+	itemID := uuid.New()
+	expected := &model.SourceItemDetail{ID: itemID, IsAttentionCheck: true, GroupName: "G"}
+
+	sourceRepo.EXPECT().UpdateAttentionCheck(gomock.Any(), itemID, true).Return(nil)
+	sourceRepo.EXPECT().GetByIDWithDetails(gomock.Any(), itemID).Return(expected, nil)
+
+	got, err := svc.UpdateSourceItemAttention(context.Background(), itemID, true)
+	if err != nil {
+		t.Fatalf("UpdateSourceItemAttention: %v", err)
+	}
+	if got.ID != itemID || !got.IsAttentionCheck {
+		t.Fatalf("unexpected result: %+v", got)
+	}
+}
+
 func TestStudyServiceDeletePairBlocked(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	defer ctrl.Finish()

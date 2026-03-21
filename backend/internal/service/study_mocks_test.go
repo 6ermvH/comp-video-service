@@ -240,6 +240,35 @@ func (mr *MocksourceItemRepositoryMockRecorder) ListWithFilters(ctx, studyID, gr
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListWithFilters", reflect.TypeOf((*MocksourceItemRepository)(nil).ListWithFilters), ctx, studyID, groupID)
 }
 
+// UpdateAttentionCheck mocks base method.
+func (m *MocksourceItemRepository) UpdateAttentionCheck(ctx context.Context, id uuid.UUID, isAttentionCheck bool) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateAttentionCheck", ctx, id, isAttentionCheck)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateAttentionCheck indicates an expected call of UpdateAttentionCheck.
+func (mr *MocksourceItemRepositoryMockRecorder) UpdateAttentionCheck(ctx, id, isAttentionCheck any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateAttentionCheck", reflect.TypeOf((*MocksourceItemRepository)(nil).UpdateAttentionCheck), ctx, id, isAttentionCheck)
+}
+
+// GetByIDWithDetails mocks base method.
+func (m *MocksourceItemRepository) GetByIDWithDetails(ctx context.Context, id uuid.UUID) (*model.SourceItemDetail, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetByIDWithDetails", ctx, id)
+	ret0, _ := ret[0].(*model.SourceItemDetail)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetByIDWithDetails indicates an expected call of GetByIDWithDetails.
+func (mr *MocksourceItemRepositoryMockRecorder) GetByIDWithDetails(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByIDWithDetails", reflect.TypeOf((*MocksourceItemRepository)(nil).GetByIDWithDetails), ctx, id)
+}
+
 // MockstudyVideoRepository is a mock of studyVideoRepository interface.
 type MockstudyVideoRepository struct {
 	ctrl     *gomock.Controller

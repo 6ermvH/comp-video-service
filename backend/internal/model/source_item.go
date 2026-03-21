@@ -36,6 +36,11 @@ type SourceItemDetail struct {
 	ResponseCount    int       `json:"response_count"`
 }
 
+// UpdateSourceItemRequest is the body for PATCH /admin/source-items/:id.
+type UpdateSourceItemRequest struct {
+	IsAttentionCheck bool `json:"is_attention_check"`
+}
+
 // CreatePairRequest creates a source item and links two existing video assets.
 type CreatePairRequest struct {
 	GroupID          uuid.UUID `json:"group_id" binding:"required"`

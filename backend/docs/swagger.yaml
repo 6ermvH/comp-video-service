@@ -143,6 +143,33 @@ definitions:
       study_id:
         type: string
     type: object
+  model.SourceItemDetail:
+    properties:
+      asset_count:
+        type: integer
+      created_at:
+        type: string
+      difficulty:
+        type: string
+      group_id:
+        type: string
+      group_name:
+        type: string
+      id:
+        type: string
+      is_attention_check:
+        type: boolean
+      notes:
+        type: string
+      pair_code:
+        type: string
+      response_count:
+        type: integer
+      source_image_id:
+        type: string
+      study_id:
+        type: string
+    type: object
   model.StartSessionRequest:
     properties:
       browser:
@@ -214,6 +241,11 @@ definitions:
         type: integer
     required:
     - choice
+    type: object
+  model.UpdateSourceItemRequest:
+    properties:
+      is_attention_check:
+        type: boolean
     type: object
   model.UpdateStudyRequest:
     properties:
@@ -853,6 +885,47 @@ paths:
       - BearerAuth: []
       - CSRFToken: []
       summary: Delete a source item (pair)
+      tags:
+      - admin
+    patch:
+      consumes:
+      - application/json
+      description: Updates fields of a source item. Currently supports updating is_attention_check.
+      parameters:
+      - description: Source item UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Update payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/model.UpdateSourceItemRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.SourceItemDetail'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      - CSRFToken: []
+      summary: Update a source item (pair)
       tags:
       - admin
   /admin/studies:

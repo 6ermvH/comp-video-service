@@ -28,6 +28,7 @@ type studyService interface {
 	ListFreeAssets(ctx context.Context) ([]*model.Video, error)
 	CreatePair(ctx context.Context, studyID uuid.UUID, req *model.CreatePairRequest) (*model.SourceItem, error)
 	DeletePair(ctx context.Context, id uuid.UUID) error
+	UpdateSourceItemAttention(ctx context.Context, id uuid.UUID, isAttentionCheck bool) (*model.SourceItemDetail, error)
 }
 
 type importService interface {
@@ -452,6 +453,39 @@ func (h *AdminHandler) DeletePair(c *gin.Context) {
 		return
 	}
 	c.Status(http.StatusNoContent)
+}
+
+// UpdateSourceItem godoc
+// @Summary      Update a source item (pair)
+// @Description  Updates fields of a source item. Currently supports updating is_attention_check.
+// @Tags         admin
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Security     CSRFToken
+// @Param        id    path      string                          true  "Source item UUID"
+// @Param        body  body      model.UpdateSourceItemRequest   true  "Update payload"
+// @Success      200   {object}  model.SourceItemDetail
+// @Failure      400   {object}  map[string]string
+// @Failure      500   {object}  map[string]string
+// @Router       /admin/source-items/{id} [patch]
+func (h *AdminHandler) UpdateSourceItem(c *gin.Context) {
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
+		return
+	}
+	var req model.UpdateSourceItemRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	item, err := h.studySvc.UpdateSourceItemAttention(c.Request.Context(), id, req.IsAttentionCheck)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, item)
 }
 
 // DeleteAsset godoc

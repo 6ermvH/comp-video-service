@@ -36,6 +36,8 @@ type sourceItemRepository interface {
 	ListWithFilters(ctx context.Context, studyID *uuid.UUID, groupID *uuid.UUID) ([]*model.SourceItem, error)
 	ListWithDetails(ctx context.Context, studyID *uuid.UUID, groupID *uuid.UUID) ([]*model.SourceItemDetail, error)
 	Delete(ctx context.Context, id uuid.UUID) (bool, error)
+	UpdateAttentionCheck(ctx context.Context, id uuid.UUID, isAttentionCheck bool) error
+	GetByIDWithDetails(ctx context.Context, id uuid.UUID) (*model.SourceItemDetail, error)
 }
 
 type studyVideoRepository interface {
@@ -134,6 +136,13 @@ func (s *StudyService) CreatePair(ctx context.Context, studyID uuid.UUID, req *m
 		return nil, fmt.Errorf("link candidate: %w", err)
 	}
 	return item, nil
+}
+
+func (s *StudyService) UpdateSourceItemAttention(ctx context.Context, id uuid.UUID, isAttentionCheck bool) (*model.SourceItemDetail, error) {
+	if err := s.sourceItemRepo.UpdateAttentionCheck(ctx, id, isAttentionCheck); err != nil {
+		return nil, fmt.Errorf("update attention check: %w", err)
+	}
+	return s.sourceItemRepo.GetByIDWithDetails(ctx, id)
 }
 
 func (s *StudyService) DeletePair(ctx context.Context, id uuid.UUID) error {

@@ -139,6 +139,44 @@ func (r *SourceItemRepository) ListWithDetails(ctx context.Context, studyID *uui
 	return out, rows.Err()
 }
 
+// UpdateAttentionCheck sets the is_attention_check flag for the given source item.
+func (r *SourceItemRepository) UpdateAttentionCheck(ctx context.Context, id uuid.UUID, isAttentionCheck bool) error {
+	if _, err := r.db.Exec(ctx,
+		`UPDATE source_items SET is_attention_check = $2 WHERE id = $1`,
+		id, isAttentionCheck,
+	); err != nil {
+		return fmt.Errorf("update attention check: %w", err)
+	}
+	return nil
+}
+
+// GetByIDWithDetails returns a single source item with enriched detail fields.
+func (r *SourceItemRepository) GetByIDWithDetails(ctx context.Context, id uuid.UUID) (*model.SourceItemDetail, error) {
+	row := r.db.QueryRow(ctx, `
+		SELECT
+			si.id, si.study_id, si.group_id, g.name AS group_name,
+			si.source_image_id, si.pair_code, si.difficulty,
+			si.is_attention_check, si.notes, si.created_at,
+			(SELECT COUNT(*) FROM video_assets va WHERE va.source_item_id = si.id) AS asset_count,
+			(SELECT COUNT(*) FROM responses r
+			 JOIN pair_presentations pp ON pp.id = r.pair_presentation_id
+			 WHERE pp.source_item_id = si.id) AS response_count
+		FROM source_items si
+		JOIN groups g ON g.id = si.group_id
+		WHERE si.id = $1`, id)
+
+	var d model.SourceItemDetail
+	if err := row.Scan(
+		&d.ID, &d.StudyID, &d.GroupID, &d.GroupName,
+		&d.SourceImageID, &d.PairCode, &d.Difficulty,
+		&d.IsAttentionCheck, &d.Notes, &d.CreatedAt,
+		&d.AssetCount, &d.ResponseCount,
+	); err != nil {
+		return nil, fmt.Errorf("get source item by id: %w", err)
+	}
+	return &d, nil
+}
+
 // Delete removes a source item and unlinks its video assets (sets source_item_id = NULL).
 // Returns false if the source item has responses — deletion is blocked.
 func (r *SourceItemRepository) Delete(ctx context.Context, id uuid.UUID) (deleted bool, err error) {

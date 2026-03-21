@@ -662,6 +662,71 @@ const docTemplate = `{
                         }
                     }
                 }
+            },
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    },
+                    {
+                        "CSRFToken": []
+                    }
+                ],
+                "description": "Updates fields of a source item. Currently supports updating is_attention_check.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Update a source item (pair)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Source item UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Update payload",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.UpdateSourceItemRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.SourceItemDetail"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
             }
         },
         "/admin/studies": {
@@ -1517,6 +1582,47 @@ const docTemplate = `{
                 }
             }
         },
+        "model.SourceItemDetail": {
+            "type": "object",
+            "properties": {
+                "asset_count": {
+                    "type": "integer"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "difficulty": {
+                    "type": "string"
+                },
+                "group_id": {
+                    "type": "string"
+                },
+                "group_name": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_attention_check": {
+                    "type": "boolean"
+                },
+                "notes": {
+                    "type": "string"
+                },
+                "pair_code": {
+                    "type": "string"
+                },
+                "response_count": {
+                    "type": "integer"
+                },
+                "source_image_id": {
+                    "type": "string"
+                },
+                "study_id": {
+                    "type": "string"
+                }
+            }
+        },
         "model.StartSessionRequest": {
             "type": "object",
             "required": [
@@ -1624,6 +1730,14 @@ const docTemplate = `{
                 },
                 "response_time_ms": {
                     "type": "integer"
+                }
+            }
+        },
+        "model.UpdateSourceItemRequest": {
+            "type": "object",
+            "properties": {
+                "is_attention_check": {
+                    "type": "boolean"
                 }
             }
         },
