@@ -225,6 +225,5 @@ export const api = {
   // ── Admin: Export ─────────────────────────────────────────
 
   exportCSV:      () =>           download('/admin/export/csv'),
-  exportJSON:     () =>           download('/admin/export/json'),
   exportStudyCSV: (studyId) =>   download(`/admin/export/study/${studyId}/csv`),
 }

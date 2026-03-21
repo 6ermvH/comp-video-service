@@ -10,7 +10,7 @@ export default function AdminAnalyticsPage() {
   const [studies, setStudies] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  const [exporting, setExporting] = useState(null) // 'csv' | 'json' | null
+  const [exporting, setExporting] = useState(false)
 
   const [selectedStudyId, setSelectedStudyId] = useState(null)
   const [pairStats, setPairStats] = useState([])
@@ -56,20 +56,15 @@ export default function AdminAnalyticsPage() {
     URL.revokeObjectURL(url)
   }
 
-  const handleExport = async (format) => {
-    setExporting(format)
+  const handleExportCSV = async () => {
+    setExporting(true)
     try {
-      if (format === 'csv') {
-        const blob = await api.exportCSV()
-        downloadBlob(blob, 'responses_export.csv')
-      } else {
-        const blob = await api.exportJSON()
-        downloadBlob(blob, 'responses_export.json')
-      }
+      const blob = await api.exportCSV()
+      downloadBlob(blob, 'responses_export.csv')
     } catch (err) {
       setError(err.message)
     } finally {
-      setExporting(null)
+      setExporting(false)
     }
   }
 
@@ -95,12 +90,8 @@ export default function AdminAnalyticsPage() {
             ↻ Обновить
           </button>
           <button className="btn btn-ghost"
-            onClick={() => handleExport('csv')} disabled={exporting === 'csv'}>
-            {exporting === 'csv' ? '…' : '⬇ CSV'}
-          </button>
-          <button className="btn btn-ghost"
-            onClick={() => handleExport('json')} disabled={exporting === 'json'}>
-            {exporting === 'json' ? '…' : '⬇ JSON'}
+            onClick={handleExportCSV} disabled={exporting}>
+            {exporting ? '…' : '⬇ CSV'}
           </button>
         </div>
       </div>
