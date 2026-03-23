@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { api } from '../api/client.js'
+import { uploadFileChunked } from '../api/chunkedUpload.js'
 import { useApiCall } from '../hooks/useApiCall.js'
 
 const STATUS_COLORS = {
@@ -71,7 +72,9 @@ export default function AdminStudiesPage() {
   const [importResult, setImportResult] = useState(null)
   const [importError, setImportError] = useState(null)
   const [dragOver, setDragOver] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState(null)
   const importFileRef = useRef(null)
+  const abortControllerRef = useRef(null)
 
   const uniqueEffectTypes = studies.length > 0
     ? [...new Set(studies.map((s) => s.effect_type).filter(Boolean))]
@@ -157,16 +160,24 @@ export default function AdminStudiesPage() {
     setImporting(true)
     setImportError(null)
     setImportResult(null)
+    setUploadProgress(null)
+
+    const controller = new AbortController()
+    abortControllerRef.current = controller
+
     try {
-      const fd = new FormData()
-      fd.append('file', importFile)
-      fd.append('name', importForm.name)
-      fd.append('effect_type', importForm.effect_type)
-      fd.append('max_tasks_per_participant', String(Number(importForm.max_tasks_per_participant)))
-      fd.append('tie_option_enabled', String(importForm.tie_option_enabled))
-      fd.append('reasons_enabled', String(importForm.reasons_enabled))
-      fd.append('confidence_enabled', String(importForm.confidence_enabled))
-      const result = await apiCall(() => api.importStudyArchive(fd))
+      const metadata = {
+        name: importForm.name,
+        effect_type: importForm.effect_type,
+        max_tasks_per_participant: Number(importForm.max_tasks_per_participant),
+        tie_option_enabled: importForm.tie_option_enabled,
+        reasons_enabled: importForm.reasons_enabled,
+        confidence_enabled: importForm.confidence_enabled,
+      }
+      const result = await uploadFileChunked(importFile, metadata, {
+        onProgress: (p) => setUploadProgress(p),
+        signal: controller.signal,
+      })
       setImportResult(result)
       setImportFile(null)
       setImportForm({
@@ -176,9 +187,21 @@ export default function AdminStudiesPage() {
       if (importFileRef.current) importFileRef.current.value = ''
       load()
     } catch (err) {
-      setImportError(err.message)
+      if (err.name === 'AbortError') {
+        setImportError('Загрузка отменена')
+      } else {
+        setImportError(err.message)
+      }
     } finally {
       setImporting(false)
+      setUploadProgress(null)
+      abortControllerRef.current = null
+    }
+  }
+
+  const handleAbortUpload = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort()
     }
   }
 
@@ -355,14 +378,43 @@ export default function AdminStudiesPage() {
               ))}
             </div>
 
+            {uploadProgress && (
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', color: 'var(--color-text-muted)', marginBottom: '6px' }}>
+                  <span>Загрузка архива… ({uploadProgress.chunkIndex + 1} / {uploadProgress.totalChunks} частей)</span>
+                  <span>{uploadProgress.percent}%</span>
+                </div>
+                <div style={{ height: '6px', background: 'var(--color-surface-2)', borderRadius: '3px', overflow: 'hidden' }}>
+                  <div style={{
+                    height: '100%',
+                    width: `${uploadProgress.percent}%`,
+                    background: '#6c63ff',
+                    borderRadius: '3px',
+                    transition: 'width 0.2s ease',
+                  }} />
+                </div>
+              </div>
+            )}
+
             <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
               <button
                 type="button"
                 className="btn btn-ghost"
                 onClick={() => { setShowImportForm(false); setImportResult(null); setImportError(null) }}
+                disabled={importing}
               >
                 Отмена
               </button>
+              {importing && (
+                <button
+                  type="button"
+                  className="btn btn-ghost"
+                  style={{ color: '#ff4d6d' }}
+                  onClick={handleAbortUpload}
+                >
+                  Прервать загрузку
+                </button>
+              )}
               <button
                 type="submit"
                 className="btn btn-primary"
@@ -371,7 +423,7 @@ export default function AdminStudiesPage() {
                 {importing ? (
                   <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <span className="spinner" style={{ width: '14px', height: '14px', borderWidth: '2px' }} />
-                    Импортируется…
+                    {uploadProgress ? `${uploadProgress.percent}%` : 'Подготовка…'}
                   </span>
                 ) : 'Импортировать'}
               </button>

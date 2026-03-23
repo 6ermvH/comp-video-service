@@ -224,6 +224,38 @@ export const api = {
   getStudyAnalytics:     (id)       => request(`/admin/analytics/study/${id}`),
   getQCReport:           ()         => request('/admin/analytics/qc'),
 
+  // ── Admin: Chunked uploads ────────────────────────────────
+
+  /** POST /admin/uploads/init → { upload_id } */
+  initUpload: () =>
+    request('/admin/uploads/init', { method: 'POST' }),
+
+  /**
+   * POST /admin/uploads/{uploadId}/chunks/{index}
+   * Sends raw binary blob with Content-Type: application/octet-stream.
+   */
+  uploadChunk: (uploadId, index, blob) => {
+    const path = `/admin/uploads/${uploadId}/chunks/${index}`
+    const headers = { 'Content-Type': 'application/octet-stream' }
+    const token = auth.getToken()
+    if (token) headers['Authorization'] = `Bearer ${token}`
+    const csrfToken = csrf.getToken()
+    if (csrfToken) headers['X-CSRF-Token'] = csrfToken
+    return fetch(`${BASE_URL}${path}`, { method: 'POST', headers, body: blob })
+      .then((res) => handleResponse(res, path))
+  },
+
+  /** POST /admin/uploads/{uploadId}/complete → import result */
+  completeUpload: (uploadId, metadata) =>
+    request(`/admin/uploads/${uploadId}/complete`, {
+      method: 'POST',
+      body: JSON.stringify(metadata),
+    }),
+
+  /** DELETE /admin/uploads/{uploadId} */
+  abortUpload: (uploadId) =>
+    request(`/admin/uploads/${uploadId}`, { method: 'DELETE' }),
+
   // ── Admin: Export ─────────────────────────────────────────
 
   exportCSV:      () =>           download('/admin/export/csv'),
