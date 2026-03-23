@@ -96,6 +96,11 @@ func (m *mockImportStorage) Delete(ctx context.Context, key string) error {
 	return nil
 }
 
+// zipBytesToReaderAt wraps a byte slice as an io.ReaderAt suitable for ImportArchiveRequest.
+func zipBytesToReaderAt(data []byte) (io.ReaderAt, int64) {
+	return bytes.NewReader(data), int64(len(data))
+}
+
 // buildTestZIPBytes creates a ZIP archive in memory with the given filename->content pairs.
 func buildTestZIPBytes(t *testing.T, files map[string][]byte) []byte {
 	t.Helper()
@@ -227,7 +232,7 @@ func TestImportArchiveRequest_ValidationErrors(t *testing.T) {
 
 	_, err = svc.ImportArchive(nil, ImportArchiveRequest{Name: "test", EffectType: "flooding"}) //nolint:staticcheck
 	if err == nil {
-		t.Fatal("expected error for empty zip data")
+		t.Fatal("expected error for nil zip reader")
 	}
 }
 
@@ -235,17 +240,19 @@ func TestParseZIP_ValidAndInvalid(t *testing.T) {
 	svc := &ImportService{}
 
 	// Invalid ZIP bytes → fatal error.
-	_, _, err := svc.parseZIP([]byte("not a zip"))
+	notZip := []byte("not a zip")
+	_, _, err := svc.parseZIP(bytes.NewReader(notZip), int64(len(notZip)))
 	if err == nil {
 		t.Fatal("expected error for invalid zip bytes")
 	}
 
 	// ZIP with non-mp4 files — silently skipped, no errors.
 	zipData := buildTestZIPBytes(t, map[string][]byte{
-		"readme.txt":       []byte("hello"),
-		"subfolder/":       nil,
+		"readme.txt": []byte("hello"),
+		"subfolder/": nil,
 	})
-	files, errs, err := svc.parseZIP(zipData)
+	ra, size := zipBytesToReaderAt(zipData)
+	files, errs, err := svc.parseZIP(ra, size)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -258,7 +265,8 @@ func TestParseZIP_ValidAndInvalid(t *testing.T) {
 	zipData = buildTestZIPBytes(t, map[string][]byte{
 		"badname.mp4": []byte("fake"),
 	})
-	files, errs, err = svc.parseZIP(zipData)
+	ra, size = zipBytesToReaderAt(zipData)
+	files, errs, err = svc.parseZIP(ra, size)
 	if err != nil {
 		t.Fatalf("unexpected fatal error: %v", err)
 	}
@@ -279,7 +287,8 @@ func TestParseZIP_ValidAndInvalid(t *testing.T) {
 		_, _ = f.Write([]byte("fake"))
 	}
 	_ = zw.Close()
-	dupFiles, dupErrs, dupErr := svc.parseZIP(buf.Bytes())
+	dupRA, dupSize := zipBytesToReaderAt(buf.Bytes())
+	dupFiles, dupErrs, dupErr := svc.parseZIP(dupRA, dupSize)
 	if dupErr != nil {
 		t.Fatalf("unexpected error: %v", dupErr)
 	}
@@ -294,7 +303,8 @@ func TestParseZIP_ValidAndInvalid(t *testing.T) {
 		"g_p_baseline.mp4":  []byte("fake"),
 		"g_p_candidate.mp4": []byte("fake"),
 	})
-	files, errs, err = svc.parseZIP(zipData)
+	ra, size = zipBytesToReaderAt(zipData)
+	files, errs, err = svc.parseZIP(ra, size)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -327,10 +337,13 @@ func TestGroupFilesByGroup(t *testing.T) {
 
 func TestImportArchive_InvalidZIP(t *testing.T) {
 	svc := newImportServiceWithDeps(nil, nil, nil, nil, nil)
+	notZip := []byte("not a zip")
+	notZipRA, notZipSize := zipBytesToReaderAt(notZip)
 	_, err := svc.ImportArchive(context.Background(), ImportArchiveRequest{
 		Name:       "test",
 		EffectType: "flooding",
-		ZIPData:    []byte("not a zip"),
+		ZIPReader:  notZipRA,
+		ZIPSize:    notZipSize,
 	})
 	if err == nil {
 		t.Fatal("expected error for invalid zip")
@@ -343,10 +356,12 @@ func TestImportArchive_AllFilesInvalid_ReturnsErrors(t *testing.T) {
 	zipData := buildTestZIPBytes(t, map[string][]byte{
 		"badname.mp4": []byte("fake"),
 	})
+	zipRA, zipSize := zipBytesToReaderAt(zipData)
 	result, err := svc.ImportArchive(context.Background(), ImportArchiveRequest{
 		Name:       "test",
 		EffectType: "flooding",
-		ZIPData:    zipData,
+		ZIPReader:  zipRA,
+		ZIPSize:    zipSize,
 	})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -370,10 +385,12 @@ func TestImportArchive_StudyCreateError(t *testing.T) {
 		"g_p_baseline.mp4":  []byte("fake"),
 		"g_p_candidate.mp4": []byte("fake"),
 	})
+	zipRA, zipSize := zipBytesToReaderAt(zipData)
 	_, err := svc.ImportArchive(context.Background(), ImportArchiveRequest{
 		Name:       "test",
 		EffectType: "flooding",
-		ZIPData:    zipData,
+		ZIPReader:  zipRA,
+		ZIPSize:    zipSize,
 	})
 	if err == nil {
 		t.Fatal("expected error from study create")
@@ -397,10 +414,12 @@ func TestImportArchive_GroupCreateError(t *testing.T) {
 		"g_p_baseline.mp4":  []byte("fake"),
 		"g_p_candidate.mp4": []byte("fake"),
 	})
+	zipRA, zipSize := zipBytesToReaderAt(zipData)
 	_, err := svc.ImportArchive(context.Background(), ImportArchiveRequest{
 		Name:       "test",
 		EffectType: "flooding",
-		ZIPData:    zipData,
+		ZIPReader:  zipRA,
+		ZIPSize:    zipSize,
 	})
 	if err == nil {
 		t.Fatal("expected error from group create")
@@ -436,10 +455,12 @@ func TestImportArchive_S3UploadError_Rollback(t *testing.T) {
 		"g_p_baseline.mp4":  []byte("fake"),
 		"g_p_candidate.mp4": []byte("fake"),
 	})
+	zipRA, zipSize := zipBytesToReaderAt(zipData)
 	_, err := svc.ImportArchive(context.Background(), ImportArchiveRequest{
 		Name:       "test",
 		EffectType: "flooding",
-		ZIPData:    zipData,
+		ZIPReader:  zipRA,
+		ZIPSize:    zipSize,
 	})
 	if err == nil {
 		t.Fatal("expected upload error")
@@ -483,10 +504,12 @@ func TestImportArchive_VideoDBError_Rollback(t *testing.T) {
 		"g_p_baseline.mp4":  []byte("fake"),
 		"g_p_candidate.mp4": []byte("fake"),
 	})
+	zipRA, zipSize := zipBytesToReaderAt(zipData)
 	_, err := svc.ImportArchive(context.Background(), ImportArchiveRequest{
 		Name:       "test",
 		EffectType: "flooding",
-		ZIPData:    zipData,
+		ZIPReader:  zipRA,
+		ZIPSize:    zipSize,
 	})
 	if err == nil {
 		t.Fatal("expected video create error")
@@ -529,10 +552,12 @@ func TestImportArchive_SourceItemCreateError(t *testing.T) {
 		"g_p_baseline.mp4":  []byte("fake"),
 		"g_p_candidate.mp4": []byte("fake"),
 	})
+	zipRA, zipSize := zipBytesToReaderAt(zipData)
 	_, err := svc.ImportArchive(context.Background(), ImportArchiveRequest{
 		Name:       "test",
 		EffectType: "flooding",
-		ZIPData:    zipData,
+		ZIPReader:  zipRA,
+		ZIPSize:    zipSize,
 	})
 	if err == nil {
 		t.Fatal("expected source item create error")
@@ -574,10 +599,12 @@ func TestImportArchive_LinkError(t *testing.T) {
 		"g_p_baseline.mp4":  []byte("fake"),
 		"g_p_candidate.mp4": []byte("fake"),
 	})
+	zipRA, zipSize := zipBytesToReaderAt(zipData)
 	_, err := svc.ImportArchive(context.Background(), ImportArchiveRequest{
 		Name:       "test",
 		EffectType: "flooding",
-		ZIPData:    zipData,
+		ZIPReader:  zipRA,
+		ZIPSize:    zipSize,
 	})
 	if err == nil {
 		t.Fatal("expected link error")
@@ -621,10 +648,12 @@ func TestImportArchive_Success(t *testing.T) {
 		"g_p_baseline.mp4":  []byte("fake"),
 		"g_p_candidate.mp4": []byte("fake"),
 	})
+	zipRA, zipSize := zipBytesToReaderAt(zipData)
 	result, err := svc.ImportArchive(context.Background(), ImportArchiveRequest{
 		Name:       "My Study",
 		EffectType: "flooding",
-		ZIPData:    zipData,
+		ZIPReader:  zipRA,
+		ZIPSize:    zipSize,
 	})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -684,10 +713,12 @@ func TestImportArchive_CandidateLinkError(t *testing.T) {
 		"g_p_baseline.mp4":  []byte("fake"),
 		"g_p_candidate.mp4": []byte("fake"),
 	})
+	zipRA, zipSize := zipBytesToReaderAt(zipData)
 	_, err := svc.ImportArchive(context.Background(), ImportArchiveRequest{
 		Name:       "test",
 		EffectType: "flooding",
-		ZIPData:    zipData,
+		ZIPReader:  zipRA,
+		ZIPSize:    zipSize,
 	})
 	if err == nil {
 		t.Fatal("expected candidate link error")

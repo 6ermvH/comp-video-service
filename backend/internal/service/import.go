@@ -2,7 +2,6 @@ package service
 
 import (
 	"archive/zip"
-	"bytes"
 	"context"
 	"fmt"
 	"io"
@@ -24,7 +23,8 @@ type ImportArchiveRequest struct {
 	TieOptionEnabled       *bool
 	ReasonsEnabled         *bool
 	ConfidenceEnabled      *bool
-	ZIPData                []byte
+	ZIPReader              io.ReaderAt
+	ZIPSize                int64
 }
 
 // ImportArchiveResult holds the result of the archive import operation.
@@ -42,7 +42,7 @@ type parsedFile struct {
 	pairName   string
 	methodType string // "baseline" or "candidate"
 	filename   string
-	data       []byte
+	zipFileRef *zip.File // reference to the ZIP entry for lazy streaming
 }
 
 // importVideoRepo is the subset of VideoRepository used by ImportService.
@@ -115,12 +115,12 @@ func (s *ImportService) ImportArchive(ctx context.Context, req ImportArchiveRequ
 	if strings.TrimSpace(req.EffectType) == "" {
 		return nil, fmt.Errorf("effect_type is required")
 	}
-	if len(req.ZIPData) == 0 {
+	if req.ZIPReader == nil {
 		return nil, fmt.Errorf("archive is empty")
 	}
 
 	// Parse files from the ZIP archive.
-	files, parseErrs, err := s.parseZIP(req.ZIPData)
+	files, parseErrs, err := s.parseZIP(req.ZIPReader, req.ZIPSize)
 	if err != nil {
 		return nil, fmt.Errorf("read archive: %w", err)
 	}
@@ -232,10 +232,10 @@ func (s *ImportService) ImportArchive(ctx context.Context, req ImportArchiveRequ
 	return result, nil
 }
 
-// parseZIP reads all MP4 files from the ZIP archive and parses their names.
-// Returns parsed files, non-fatal parse errors (skipped files), and a fatal error if the archive is unreadable.
-func (s *ImportService) parseZIP(data []byte) ([]parsedFile, []string, error) {
-	r, err := zip.NewReader(bytes.NewReader(data), int64(len(data)))
+// parseZIP reads the ZIP directory and parses MP4 filenames without reading file contents.
+// Returns parsed files (with zip entry references for lazy streaming), non-fatal parse errors, and a fatal error if the archive is unreadable.
+func (s *ImportService) parseZIP(ra io.ReaderAt, size int64) ([]parsedFile, []string, error) {
+	r, err := zip.NewReader(ra, size)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -269,21 +269,8 @@ func (s *ImportService) parseZIP(data []byte) ([]parsedFile, []string, error) {
 			continue
 		}
 
-		// Read file contents into memory.
-		rc, err := f.Open()
-		if err != nil {
-			errs = append(errs, fmt.Sprintf("%s: failed to open in archive: %v", name, err))
-			continue
-		}
-		fileData, readErr := io.ReadAll(rc)
-		_ = rc.Close()
-		if readErr != nil {
-			errs = append(errs, fmt.Sprintf("%s: failed to read: %v", name, readErr))
-			continue
-		}
-
-		parsed.data = fileData
 		parsed.filename = name
+		parsed.zipFileRef = f
 		files = append(files, parsed)
 	}
 
@@ -385,9 +372,16 @@ func groupFilesByGroup(files []parsedFile) map[string]map[string]map[string]pars
 // Returns the created Video model and the S3 key (for rollback tracking).
 func (s *ImportService) uploadVideo(ctx context.Context, f parsedFile) (*model.Video, string, error) {
 	key := fmt.Sprintf("videos/%s.mp4", uuid.NewString())
-	size := int64(len(f.data))
 
-	if err := s.s3.Upload(ctx, key, "video/mp4", bytes.NewReader(f.data), size); err != nil {
+	rc, err := f.zipFileRef.Open()
+	if err != nil {
+		return nil, key, fmt.Errorf("open zip entry: %w", err)
+	}
+	defer func() { _ = rc.Close() }()
+
+	size := int64(f.zipFileRef.UncompressedSize64) //nolint:gosec // ZIP size is validated by archive/zip
+
+	if err := s.s3.Upload(ctx, key, "video/mp4", rc, size); err != nil {
 		return nil, key, fmt.Errorf("s3 upload: %w", err)
 	}
 

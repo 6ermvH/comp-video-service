@@ -7,6 +7,7 @@ import (
 	"io"
 	"mime/multipart"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 
@@ -753,16 +754,30 @@ func (h *AdminHandler) ImportArchive(c *gin.Context) {
 	}
 	defer func() { _ = file.Close() }()
 
-	zipData, err := io.ReadAll(file)
+	tmpFile, err := os.CreateTemp("", "import-*.zip")
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create temp file"})
+		return
+	}
+	defer func() { _ = os.Remove(tmpFile.Name()) }()
+	defer func() { _ = tmpFile.Close() }()
+
+	written, err := io.Copy(tmpFile, file)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "failed to read archive"})
+		return
+	}
+
+	if _, err := tmpFile.Seek(0, io.SeekStart); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to seek temp file"})
 		return
 	}
 
 	req := service.ImportArchiveRequest{
 		Name:       name,
 		EffectType: effectType,
-		ZIPData:    zipData,
+		ZIPReader:  tmpFile,
+		ZIPSize:    written,
 	}
 
 	if v := strings.TrimSpace(c.PostForm("max_tasks_per_participant")); v != "" {
