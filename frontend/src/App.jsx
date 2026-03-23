@@ -7,7 +7,6 @@ import WelcomePage      from './pages/WelcomePage.jsx'
 import InstructionsPage from './pages/InstructionsPage.jsx'
 import PracticePage     from './pages/PracticePage.jsx'
 import TaskPage         from './pages/TaskPage.jsx'
-import BreakPage        from './pages/BreakPage.jsx'
 import CompletionPage   from './pages/CompletionPage.jsx'
 
 import LoginPage           from './pages/LoginPage.jsx'
@@ -27,7 +26,6 @@ function App() {
           <Route path="/instructions" element={<InstructionsPage />} />
           <Route path="/practice"    element={<PracticePage />} />
           <Route path="/task"        element={<TaskPage />} />
-          <Route path="/break"       element={<BreakPage />} />
           <Route path="/complete"    element={<CompletionPage />} />
 
           {/* ── Admin ── */}

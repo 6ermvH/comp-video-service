@@ -9,9 +9,6 @@ import ConfidenceRating from '../components/ConfidenceRating.jsx'
 import ProgressBar from '../components/ProgressBar.jsx'
 import { useWindowWidth } from '../hooks/useWindowWidth.js'
 
-// Show break page every N real tasks
-const BREAK_EVERY = 10
-
 export default function TaskPage({ isPractice = false }) {
   const navigate = useNavigate()
   const { addToast } = useToast()
@@ -27,8 +24,7 @@ export default function TaskPage({ isPractice = false }) {
   const [submitting, setSubmitting] = useState(false)
   const [taskStartTs, setTaskStartTs] = useState(null)
 
-  const playerRef    = useRef(null)
-  const taskCountRef = useRef(0)
+  const playerRef = useRef(null)
   const isMobile = useWindowWidth() <= 768
 
   // Guard: no session → back to welcome
@@ -97,8 +93,6 @@ export default function TaskPage({ isPractice = false }) {
         replay_count: replayCount,
       })
 
-      taskCountRef.current += 1
-
       // Fetch next task — returns null on 204 (no more tasks)
       const next = await loadNextTask()
 
@@ -106,12 +100,6 @@ export default function TaskPage({ isPractice = false }) {
         // 204: all tasks done → complete session
         await completeSession()
         navigate('/complete', { replace: true })
-        return
-      }
-
-      // Break every N real tasks (not practice)
-      if (!isPractice && taskCountRef.current % BREAK_EVERY === 0) {
-        navigate('/break')
         return
       }
 
