@@ -87,6 +87,9 @@ func main() {
 	sessionH := handler.NewSessionHandler(sessionSvc)
 	taskH := handler.NewTaskHandler(sessionSvc, pairRepo, interactionRepo)
 	adminH := handler.NewAdminHandlerWithImport(studySvc, assetSvc, analyticsSvc, qcSvc, exportSvc, importSvc)
+	chunkedH := handler.NewChunkedUploadHandler(importSvc)
+
+	chunkedH.StartCleanup(ctx)
 
 	if os.Getenv("GIN_MODE") == "" {
 		gin.SetMode(gin.ReleaseMode)
@@ -152,6 +155,11 @@ func main() {
 
 		adminGroup.GET("/export/csv", adminH.ExportCSV)
 		adminGroup.GET("/export/study/:id/csv", adminH.ExportStudyCSV)
+
+		adminGroup.POST("/uploads/init", chunkedH.InitUpload)
+		adminGroup.POST("/uploads/:upload_id/chunks/:index", chunkedH.UploadChunk)
+		adminGroup.POST("/uploads/:upload_id/complete", chunkedH.CompleteUpload)
+		adminGroup.DELETE("/uploads/:upload_id", chunkedH.AbortUpload)
 	}
 
 	log.Printf("starting server on :%s", cfg.Port)
