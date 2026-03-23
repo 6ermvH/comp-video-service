@@ -1,5 +1,12 @@
 basePath: /api
 definitions:
+  handler.completeRequest:
+    properties:
+      effect_type:
+        type: string
+      name:
+        type: string
+    type: object
   model.Admin:
     properties:
       created_at:
@@ -1231,6 +1238,158 @@ paths:
       - BearerAuth: []
       - CSRFToken: []
       summary: Import a study from a ZIP archive of MP4 files
+      tags:
+      - admin
+  /admin/uploads/{upload_id}:
+    delete:
+      parameters:
+      - description: Upload ID
+        in: path
+        name: upload_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      - CSRFToken: []
+      summary: Abort a pending chunked upload
+      tags:
+      - admin
+  /admin/uploads/{upload_id}/chunks/{index}:
+    post:
+      consumes:
+      - application/octet-stream
+      parameters:
+      - description: Upload ID
+        in: path
+        name: upload_id
+        required: true
+        type: string
+      - description: Chunk index (0-based)
+        in: path
+        name: index
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "409":
+          description: Conflict
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "413":
+          description: Request Entity Too Large
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      - CSRFToken: []
+      summary: Upload one chunk of a pending upload
+      tags:
+      - admin
+  /admin/uploads/{upload_id}/complete:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Upload ID
+        in: path
+        name: upload_id
+        required: true
+        type: string
+      - description: Study metadata
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handler.completeRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/service.ImportArchiveResult'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      - CSRFToken: []
+      summary: Assemble chunks and import the ZIP archive
+      tags:
+      - admin
+  /admin/uploads/init:
+    post:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      - CSRFToken: []
+      summary: Initialise a chunked upload session
       tags:
       - admin
   /session/{token}/complete:
