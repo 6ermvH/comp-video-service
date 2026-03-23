@@ -735,6 +735,12 @@ func (h *AdminHandler) ImportArchive(c *gin.Context) {
 		return
 	}
 
+	// Allow up to 1GB uploads for this handler.
+	if err := c.Request.ParseMultipartForm(1 << 30); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "archive too large (max 1GB)"})
+		return
+	}
+
 	name := strings.TrimSpace(c.PostForm("name"))
 	if name == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "name is required"})
