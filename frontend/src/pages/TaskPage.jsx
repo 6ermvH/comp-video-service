@@ -20,6 +20,9 @@ export default function TaskPage({ isPractice = false }) {
   const [choice, setChoice]       = useState(null)  // 'left' | 'right' | 'tie'
   const [reasons, setReasons]     = useState([])
   const [confidence, setConfidence] = useState(null)
+  const [customReason, setCustomReason] = useState('')
+  const [customReasonOpen, setCustomReasonOpen] = useState(false)
+  const [customReasonDraft, setCustomReasonDraft] = useState('')
   const [replayCount, setReplayCount] = useState(0)
   const [submitting, setSubmitting] = useState(false)
   const [taskStartTs, setTaskStartTs] = useState(null)
@@ -47,6 +50,9 @@ export default function TaskPage({ isPractice = false }) {
     setChoice(null)
     setReasons([])
     setConfidence(null)
+    setCustomReason('')
+    setCustomReasonOpen(false)
+    setCustomReasonDraft('')
     setReplayCount(0)
     setTaskStartTs(Date.now())
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -89,6 +95,7 @@ export default function TaskPage({ isPractice = false }) {
         choice,
         reason_codes: reasons,
         confidence:   confidence || null,
+        custom_reason: customReason || null,
         response_time_ms: responseTimeMs,
         replay_count: replayCount,
       })
@@ -239,6 +246,78 @@ export default function TaskPage({ isPractice = false }) {
                 onChange={setConfidence}
                 disabled={submitting}
               />
+            )}
+          </div>
+        )}
+
+        {hasDetailedFeedback && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <button
+              onClick={() => {
+                if (!customReasonOpen) {
+                  setCustomReasonDraft(customReason)
+                }
+                setCustomReasonOpen((v) => !v)
+              }}
+              disabled={submitting}
+              style={{
+                alignSelf: 'flex-start',
+                background: 'none',
+                border: 'none',
+                padding: '2px 0',
+                cursor: submitting ? 'not-allowed' : 'pointer',
+                fontSize: '12px',
+                color: customReason ? 'var(--color-primary)' : 'var(--color-text-muted)',
+                opacity: submitting ? 0.5 : 1,
+                textDecoration: 'underline',
+                textDecorationStyle: 'dotted',
+              }}
+            >
+              {customReason ? '✓ Иные причины' : 'Иные причины'}
+            </button>
+
+            {customReasonOpen && (
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '6px',
+                padding: '10px 12px',
+                background: 'var(--color-surface, rgba(255,255,255,0.04))',
+                border: '1px solid var(--color-border, rgba(255,255,255,0.1))',
+                borderRadius: 'var(--radius-sm)',
+              }}>
+                <textarea
+                  rows={3}
+                  placeholder="Напишите свой комментарий..."
+                  value={customReasonDraft}
+                  onChange={(e) => setCustomReasonDraft(e.target.value)}
+                  disabled={submitting}
+                  style={{
+                    resize: 'vertical',
+                    fontSize: '13px',
+                    padding: '6px 8px',
+                    borderRadius: 'var(--radius-sm)',
+                    border: '1px solid var(--color-border, rgba(255,255,255,0.15))',
+                    background: 'var(--color-bg)',
+                    color: 'var(--color-text)',
+                    outline: 'none',
+                    width: '100%',
+                    boxSizing: 'border-box',
+                    fontFamily: 'inherit',
+                  }}
+                />
+                <button
+                  className="btn btn-ghost"
+                  style={{ alignSelf: 'flex-start', fontSize: '12px', padding: '4px 10px' }}
+                  disabled={submitting}
+                  onClick={() => {
+                    setCustomReason(customReasonDraft.trim())
+                    setCustomReasonOpen(false)
+                  }}
+                >
+                  Сохранить
+                </button>
+              </div>
             )}
           </div>
         )}
