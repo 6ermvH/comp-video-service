@@ -291,8 +291,6 @@ comp-video-service/
 │   ├── backend.yml               # Lint, unit tests, coverage ≥70%, build
 │   ├── frontend.yml              # Lint, build
 │   └── api-contract.yml          # Проверка drift OpenAPI + контракт фронтенда
-├── docs/
-│   └── to_contributor.md         # Рабочий процесс с LLM-агентами
 ├── Dockerfile                    # Root Dockerfile для Timeweb App Platform
 ├── docker-compose.yml
 ├── .env.example
@@ -362,6 +360,3 @@ swag init -g cmd/server/main.go -o docs --outputTypes yaml,json --quiet
 
 ---
 
-## Работа с LLM-агентами
-
-Проект разрабатывается с помощью LLM-агентов. Подробнее — в [docs/to_contributor.md](docs/to_contributor.md).
