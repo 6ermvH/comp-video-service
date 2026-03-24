@@ -213,6 +213,7 @@ func (s *ExportService) ExportStudyCSV(ctx context.Context, studyID uuid.UUID) (
 // writeExportCSV iterates rows and writes the shared CSV format.
 func writeExportCSV(rows exportRows, scanErrPrefix string) ([]byte, error) {
 	buf := &bytes.Buffer{}
+	buf.Write([]byte{0xEF, 0xBB, 0xBF}) // UTF-8 BOM for Excel compatibility
 	writer := csv.NewWriter(buf)
 
 	if err := writer.Write(exportCSVHeaderSlice); err != nil {
