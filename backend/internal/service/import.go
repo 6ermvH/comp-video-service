@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -379,9 +380,23 @@ func (s *ImportService) uploadVideo(ctx context.Context, f parsedFile) (*model.V
 	}
 	defer func() { _ = rc.Close() }()
 
-	size := int64(f.zipFileRef.UncompressedSize64) //nolint:gosec // ZIP size is validated by archive/zip
+	// Buffer the video into a temp file so the stream is seekable for S3 retry.
+	tmp, err := os.CreateTemp("", "upload-*.mp4")
+	if err != nil {
+		return nil, key, fmt.Errorf("create temp file: %w", err)
+	}
+	defer func() { _ = os.Remove(tmp.Name()) }()
+	defer func() { _ = tmp.Close() }()
 
-	if err := s.s3.Upload(ctx, key, "video/mp4", rc, size); err != nil {
+	size, err := io.Copy(tmp, rc)
+	if err != nil {
+		return nil, key, fmt.Errorf("buffer video to temp: %w", err)
+	}
+	if _, err := tmp.Seek(0, io.SeekStart); err != nil {
+		return nil, key, fmt.Errorf("seek temp file: %w", err)
+	}
+
+	if err := s.s3.Upload(ctx, key, "video/mp4", tmp, size); err != nil {
 		return nil, key, fmt.Errorf("s3 upload: %w", err)
 	}
 
