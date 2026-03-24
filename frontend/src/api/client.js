@@ -247,10 +247,7 @@ export const api = {
 
   /** POST /admin/uploads/{uploadId}/complete → import result */
   completeUpload: (uploadId, metadata) =>
-    request(`/admin/uploads/${uploadId}/complete`, {
-      method: 'POST',
-      body: JSON.stringify(metadata),
-    }),
+    request(`/admin/uploads/${uploadId}/complete`, { method: 'POST', body: JSON.stringify(metadata) }),
 
   /** DELETE /admin/uploads/{uploadId} */
   abortUpload: (uploadId) =>
