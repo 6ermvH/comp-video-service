@@ -88,11 +88,18 @@ func applyMigrations(ctx context.Context, db *pgxpool.Pool) error {
 	if err != nil {
 		return err
 	}
+	m3, err := readMigrationFile("003_add_custom_reason_to_responses.up.sql")
+	if err != nil {
+		return err
+	}
 	if _, err := db.Exec(ctx, m1); err != nil {
 		return fmt.Errorf("exec migration 001: %w", err)
 	}
 	if _, err := db.Exec(ctx, m2); err != nil {
 		return fmt.Errorf("exec migration 002: %w", err)
+	}
+	if _, err := db.Exec(ctx, m3); err != nil {
+		return fmt.Errorf("exec migration 003: %w", err)
 	}
 	return nil
 }
