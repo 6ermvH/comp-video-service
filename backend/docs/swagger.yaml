@@ -114,6 +114,8 @@ definitions:
         type: integer
       created_at:
         type: string
+      custom_reason:
+        type: string
       id:
         type: string
       pair_presentation_id:
@@ -238,6 +240,8 @@ definitions:
         type: string
       confidence:
         type: integer
+      custom_reason:
+        type: string
       reason_codes:
         items:
           type: string

@@ -23,13 +23,14 @@ func (r *ResponseRepository) Create(ctx context.Context, resp *model.Response) (
 	row := r.db.QueryRow(ctx, `
 		INSERT INTO responses (
 			participant_id, pair_presentation_id, choice, reason_codes,
-			confidence, response_time_ms, replay_count
+			confidence, response_time_ms, replay_count, custom_reason
 		)
-		VALUES ($1,$2,$3,$4,$5,$6,$7)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
 		RETURNING id, participant_id, pair_presentation_id, choice, reason_codes,
-			confidence, response_time_ms, replay_count, created_at`,
+			confidence, response_time_ms, replay_count, custom_reason, created_at`,
 		resp.ParticipantID, resp.PairPresentationID, resp.Choice,
 		resp.ReasonCodes, resp.Confidence, resp.ResponseTimeMS, resp.ReplayCount,
+		resp.CustomReason,
 	)
 	return scanResponse(row)
 }
@@ -154,7 +155,7 @@ func scanResponse(row scanner) (*model.Response, error) {
 	err := row.Scan(
 		&resp.ID, &resp.ParticipantID, &resp.PairPresentationID, &resp.Choice,
 		&resp.ReasonCodes, &resp.Confidence, &resp.ResponseTimeMS, &resp.ReplayCount,
-		&resp.CreatedAt,
+		&resp.CustomReason, &resp.CreatedAt,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("scan response: %w", err)

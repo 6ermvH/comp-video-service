@@ -1864,6 +1864,9 @@
                 "created_at": {
                     "type": "string"
                 },
+                "custom_reason": {
+                    "type": "string"
+                },
                 "id": {
                     "type": "string"
                 },
@@ -2055,6 +2058,9 @@
                 },
                 "confidence": {
                     "type": "integer"
+                },
+                "custom_reason": {
+                    "type": "string"
                 },
                 "reason_codes": {
                     "type": "array",

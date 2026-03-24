@@ -246,6 +246,7 @@ func (s *SessionService) SaveResponse(
 		Confidence:         req.Confidence,
 		ResponseTimeMS:     req.ResponseTimeMS,
 		ReplayCount:        req.ReplayCount,
+		CustomReason:       req.CustomReason,
 	})
 	if err != nil {
 		return nil, err

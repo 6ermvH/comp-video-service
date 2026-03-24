@@ -16,6 +16,7 @@ type Response struct {
 	Confidence         *int      `json:"confidence,omitempty"`
 	ResponseTimeMS     *int      `json:"response_time_ms,omitempty"`
 	ReplayCount        int       `json:"replay_count"`
+	CustomReason       *string   `json:"custom_reason,omitempty"`
 	CreatedAt          time.Time `json:"created_at"`
 }
 
@@ -26,4 +27,5 @@ type TaskResponseRequest struct {
 	Confidence     *int     `json:"confidence"`
 	ResponseTimeMS *int     `json:"response_time_ms"`
 	ReplayCount    int      `json:"replay_count"`
+	CustomReason   *string  `json:"custom_reason"`
 }
