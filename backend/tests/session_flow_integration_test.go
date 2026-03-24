@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/csv"
+	"strings"
 	"testing"
 	"time"
 
@@ -125,7 +126,8 @@ func TestSaveResponseAndExportCSVHeader(t *testing.T) {
 	if len(header) != 20 {
 		t.Fatalf("expected 20 columns, got %d", len(header))
 	}
-	if header[0] != "response_id" || header[19] != "created_at" {
+	first := strings.TrimPrefix(header[0], "\xEF\xBB\xBF") // strip UTF-8 BOM
+	if first != "response_id" || header[19] != "created_at" {
 		t.Fatalf("unexpected export header: first=%q last=%q", header[0], header[19])
 	}
 
