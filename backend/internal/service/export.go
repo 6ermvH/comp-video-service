@@ -59,10 +59,10 @@ func NewExportService(db *pgxpool.Pool) *ExportService {
 
 var exportCSVHeaderSlice = []string{
 	"response_id", "participant_id", "study_name", "effect_type", "group_name", "pair_code",
-	"is_suspect", "candidate_position", "candidate_chosen",
+	"is_suspect", "candidate_position", "candidate_chosen", "choice",
 	"reason_motion", "reason_artifacts", "reason_overall", "reason_integration",
 	"confidence", "response_time_ms", "replay_count",
-	"is_attention_check", "created_at",
+	"is_attention_check", "custom_reason", "created_at",
 }
 
 // buildExportCSVRow converts scanned fields into a CSV record.
@@ -72,6 +72,7 @@ func buildExportCSVRow(
 	reasonCodes, confidence, responseTimeMS string,
 	replayCount int,
 	isAttentionCheck bool,
+	customReason string,
 	createdAt time.Time,
 ) []string {
 	isSuspect := qualityFlag == "suspect" || qualityFlag == "flagged"
@@ -84,6 +85,17 @@ func buildExportCSVRow(
 	}
 
 	candidateChosen := candidatePosition != "" && choice == candidatePosition
+
+	var semanticChoice string
+	if candidatePosition == "" {
+		semanticChoice = choice
+	} else if choice == candidatePosition {
+		semanticChoice = "candidate"
+	} else if choice == "tie" {
+		semanticChoice = "tie"
+	} else {
+		semanticChoice = "baseline"
+	}
 
 	codes := strings.Split(reasonCodes, "|")
 	hasCode := func(target string) bool {
@@ -109,6 +121,7 @@ func buildExportCSVRow(
 		strconv.FormatBool(isSuspect),
 		candidatePosition,
 		strconv.FormatBool(candidateChosen),
+		semanticChoice,
 		strconv.FormatBool(reasonMotion),
 		strconv.FormatBool(reasonArtifacts),
 		strconv.FormatBool(reasonOverall),
@@ -117,6 +130,7 @@ func buildExportCSVRow(
 		responseTimeMS,
 		fmt.Sprintf("%d", replayCount),
 		strconv.FormatBool(isAttentionCheck),
+		customReason,
 		createdAt.UTC().Format(time.RFC3339Nano),
 	}
 }
@@ -141,6 +155,7 @@ func (s *ExportService) ExportCSV(ctx context.Context) ([]byte, error) {
 			COALESCE(r.response_time_ms::text, ''),
 			r.replay_count,
 			pp.is_attention_check,
+			COALESCE(r.custom_reason, ''),
 			r.created_at
 		FROM responses r
 		JOIN participants p ON p.id = r.participant_id
@@ -177,6 +192,7 @@ func (s *ExportService) ExportStudyCSV(ctx context.Context, studyID uuid.UUID) (
 			COALESCE(r.response_time_ms::text, ''),
 			r.replay_count,
 			pp.is_attention_check,
+			COALESCE(r.custom_reason, ''),
 			r.created_at
 		FROM responses r
 		JOIN participants p ON p.id = r.participant_id
@@ -220,13 +236,14 @@ func writeExportCSV(rows exportRows, scanErrPrefix string) ([]byte, error) {
 			responseTimeMS   string
 			replayCount      int
 			isAttentionCheck bool
+			customReason     string
 			createdAt        time.Time
 		)
 		if err := rows.Scan(
 			&responseID, &participantID, &studyName, &effectType, &groupName, &pairCode,
 			&qualityFlag, &leftMethodType, &rightMethodType, &choice,
 			&reasonCodes, &confidence, &responseTimeMS, &replayCount,
-			&isAttentionCheck, &createdAt,
+			&isAttentionCheck, &customReason, &createdAt,
 		); err != nil {
 			return nil, fmt.Errorf("%s: %w", scanErrPrefix, err)
 		}
@@ -235,7 +252,7 @@ func writeExportCSV(rows exportRows, scanErrPrefix string) ([]byte, error) {
 			responseID, participantID, studyName, effectType, groupName, pairCode,
 			qualityFlag, leftMethodType, rightMethodType, choice,
 			reasonCodes, confidence, responseTimeMS,
-			replayCount, isAttentionCheck, createdAt,
+			replayCount, isAttentionCheck, customReason, createdAt,
 		)
 		if err := writer.Write(rec); err != nil {
 			return nil, err

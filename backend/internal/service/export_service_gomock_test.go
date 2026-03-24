@@ -11,7 +11,7 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
-// Shared scan callback for ExportCSV / ExportStudyCSV (16 columns, new format).
+// Shared scan callback for ExportCSV / ExportStudyCSV (17 columns, new format).
 func scanExportRow(dest ...any) error {
 	*(dest[0].(*string)) = "r1"
 	*(dest[1].(*string)) = "p1"
@@ -28,7 +28,8 @@ func scanExportRow(dest ...any) error {
 	*(dest[12].(*string)) = "2000"
 	*(dest[13].(*int)) = 2
 	*(dest[14].(*bool)) = false
-	*(dest[15].(*time.Time)) = time.Date(2026, 3, 21, 0, 0, 0, 0, time.UTC)
+	*(dest[15].(*string)) = ""
+	*(dest[16].(*time.Time)) = time.Date(2026, 3, 21, 0, 0, 0, 0, time.UTC)
 	return nil
 }
 
@@ -36,7 +37,7 @@ var scan15Args = []any{
 	gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
 	gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
 	gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(),
-	gomock.Any(),
+	gomock.Any(), gomock.Any(),
 }
 
 func TestExportServiceExportCSVSuccess(t *testing.T) {
@@ -189,7 +190,8 @@ func TestExportStudyCSVCandidatePositionRight(t *testing.T) {
 			*(dest[12].(*string)) = ""
 			*(dest[13].(*int)) = 0
 			*(dest[14].(*bool)) = true
-			*(dest[15].(*time.Time)) = time.Date(2026, 3, 21, 0, 0, 0, 0, time.UTC)
+			*(dest[15].(*string)) = ""
+			*(dest[16].(*time.Time)) = time.Date(2026, 3, 21, 0, 0, 0, 0, time.UTC)
 			return nil
 		}),
 		rows.EXPECT().Next().Return(false),
